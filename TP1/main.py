@@ -46,7 +46,7 @@ def register_targets(instances_ids):
         TargetGroupArn=target_group_arn,
         Targets=targets
     )
-    
+
     returntg_registered
 
 
@@ -61,11 +61,18 @@ def create_load_balancer(security_group_id):
 
     return load_balancer_arn
 
-def create_listener(load_balancer_arn):
+def create_listener(load_balancer_arn,target_group_arn):
     response=client.create_listener(
     LoadBalancerArn=load_balancer_arn,
-       
+    Port=80,
+    Protocol='HTTP',
+    DefaultActions=[
+        {
+            'TargetGroupArn': target_group_arn,
+            'Type':'forward'
+        },
+    ]
 
     )
-
+    return 
 
