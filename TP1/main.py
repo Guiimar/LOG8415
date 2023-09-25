@@ -37,6 +37,20 @@ def create_target_group(group_name,vpc_id):
     
     return target_group_arn
 
+def register_targets(instances_ids):
+    targets=[]
+    for instance_id in instances_ids:
+        targets.append({"Id":instance_id,"Port":80})
+
+    tg_registered=client.register_targets(
+        TargetGroupArn=target_group_arn,
+        Targets=targets
+    )
+    
+    returntg_registered
+
+
+
 def create_load_balancer(security_group_id):
     response = client.create_load_balancer(
         Name="my-load-balancer",
@@ -53,4 +67,5 @@ def create_listener(load_balancer_arn):
        
 
     )
+
 
