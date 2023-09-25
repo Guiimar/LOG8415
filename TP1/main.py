@@ -47,5 +47,10 @@ def create_load_balancer(security_group_id):
 
     return load_balancer_arn
 
+def create_listener(load_balancer_arn):
+    response=client.create_listener(
+    LoadBalancerArn=load_balancer_arn,
+       
 
+    )
 
