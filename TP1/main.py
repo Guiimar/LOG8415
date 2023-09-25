@@ -1,5 +1,15 @@
 import boto3
 
+#for crating the connection to EC2 : 
+ec2 =  boto3.client('ec2',
+                   'us-east-1',
+                   aws_access_key_id= key_id,
+                   aws_secret_access_key=secret_access_key ,
+                  aws_session_token= session_token) 
+#send request and getting the response from the instance
+response = ec2.describe_instances()
+print(response)
+
 def create_instance_ec2(num_instances,ami_id,instance_type,key_pair_name,resource,count,security_group_id=None):
     instances=[]
     for i in range(num_instances):
