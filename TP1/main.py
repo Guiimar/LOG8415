@@ -62,7 +62,7 @@ def create_load_balancer(security_group_id):
     return load_balancer_arn
 
 def create_listener(load_balancer_arn,target_group_arn):
-    response=client.create_listener(
+    response_listener=client.create_listener(
     LoadBalancerArn=load_balancer_arn,
     Port=80,
     Protocol='HTTP',
@@ -72,7 +72,6 @@ def create_listener(load_balancer_arn,target_group_arn):
             'Type':'forward'
         },
     ]
-
     )
-    return 
+    return response_listener
 
