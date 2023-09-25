@@ -37,4 +37,15 @@ def create_target_group(group_name,vpc_id):
     
     return target_group_arn
 
+def create_load_balancer(security_group_id):
+    response = client.create_load_balancer(
+        Name="my-load-balancer",
+        Subnets=["subnet-id1", "subnet-id2"],  
+        SecurityGroups=[security_group_id],
+    )
+    load_balancer_arn = response["LoadBalancers"][0]["LoadBalancerArn"]
+
+    return load_balancer_arn
+
+
 
