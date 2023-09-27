@@ -1,7 +1,6 @@
 import boto3
 
 #for crating the connection to EC2 : 
-#for crating the connection to EC2 : 
 def create_connection_ec2(key_id, access_key, session_token):
     ec2 =  boto3.resource('ec2',
                        'us-east-1',
