@@ -52,21 +52,21 @@ def create_instance_ec2(num_instances,ami_id,
         print(f'{instances[i]} is starting')
     return instances
 
-def create_target_group(targetname,vpc_id):
+def create_target_group(targetname,vpc_id,port):
     tg_response=client.create_target_group(
         Name=targetname,
         Protocol='HTTP',
-        Port=80,
+        Port=port,
         VpcId=vpc_id,
         TargetType ='instance'
     )
     target_group_arn = tg_response["TargetGroups"][0]["TargetGroupArn"]    
     return target_group_arn
 
-def register_targets(instances_ids,target_group_arn):
+def register_targets(instances_ids,target_group_arn,port):
     targets=[]
     for instance_id in instances_ids:
-        targets.append({"Id":instance_id,"Port":80})
+        targets.append({"Id":instance_id,"Port":port})
 
     tg_registered=client.register_targets(
         TargetGroupArn=target_group_arn,
@@ -87,10 +87,10 @@ def create_load_balancer(subnets,security_group):
 
     return load_balancer_arn
 
-def create_listener(load_balancer_arn,target_group_arn):
+def create_listener(load_balancer_arn,target_group_arn,port):
     response_listener=client.create_listener(
     LoadBalancerArn=load_balancer_arn,
-    Port=80,
+    Port=port,
     Protocol='HTTP',
     DefaultActions=[
         {
@@ -101,6 +101,8 @@ def create_listener(load_balancer_arn,target_group_arn):
     )
     return response_listener
 
+def create_listener_rule():
+    
 
 def terminate_instances(instances_ids,resource):
     for x in instances_ids:
@@ -153,21 +155,28 @@ if __name__ == '__main__':
     print("\n\n instances created succefuly instance type  : m4.large")
 
     #creation des targets groups
-    target_group_1=create_target_group('TargetGroup1',vpc_id)
-    target_group_2=create_target_group('TargetGroup2',vpc_id)
+    target_group_1=create_target_group('TargetGroup1',vpc_id,80)
+    target_group_2=create_target_group('TargetGroup2',vpc_id,8080)
 
     time.sleep(60)
 
     #Enregistrement targets
-    register_targets(instances_t2,target_group_1)
-    register_targets(instances_m4,target_group_2)
+    register_targets(instances_t2,target_group_1,80)
+    register_targets(instances_m4,target_group_2,8080)
 
 
     #Load balancer 
     load_balancer=create_load_balancer(subnets,security_group_id)
     print('load balancer')
 
-    print(target_group_2)
+    #Creation listener
+    listener_group1=create_listener(load_balancer,target_group_1,80)
+
+    listener_group2=create_listener(load_balancer,target_group_2,8080)
+    print('Listeners créés')
+
+
+
     total_instances=instances_t2+instances_m4
     time.sleep(160)
     terminate_instances(total_instances,ec2)
