@@ -63,7 +63,7 @@ def create_target_group(targetname,vpc_id):
     target_group_arn = tg_response["TargetGroups"][0]["TargetGroupArn"]    
     return target_group_arn
 
-def register_targets(instances_ids):
+def register_targets(instances_ids,target_group_arn):
     targets=[]
     for instance_id in instances_ids:
         targets.append({"Id":instance_id,"Port":80})
@@ -77,12 +77,12 @@ def register_targets(instances_ids):
 
 
 
-def create_load_balancer(security_group_id):
+def create_load_balancer(subnets,security_group):
     response = client.create_load_balancer(
         Name="my-load-balancer",
-        Subnets=["subnet-id1", "subnet-id2"],  
-        SecurityGroups=[security_group_id],
-    )
+        Subnets=subnets,
+        SecurityGroups=[security_group]
+                )
     load_balancer_arn = response["LoadBalancers"][0]["LoadBalancerArn"]
 
     return load_balancer_arn
@@ -100,6 +100,7 @@ def create_listener(load_balancer_arn,target_group_arn):
     ]
     )
     return response_listener
+
 
 def terminate_instances(instances_ids,resource):
     for x in instances_ids:
@@ -135,6 +136,8 @@ if __name__ == '__main__':
     security_group_id = "sg-06437851b56b69a96"
 
     vpc_id="vpc-0d882582a823a8039"
+
+    subnets=['subnet-053bd769717aa1641','subnet-00aebad3742819994']
     # Create 4 instances with t2.large as intance type: 
     instance_type = "t2.large"
     print("\n\n creating instances, type : t2.large\n\n")
@@ -149,10 +152,23 @@ if __name__ == '__main__':
     print(instances_m4)
     print("\n\n instances created succefuly instance type  : m4.large")
 
+    #creation des targets groups
     target_group_1=create_target_group('TargetGroup1',vpc_id)
     target_group_2=create_target_group('TargetGroup2',vpc_id)
 
-    total_instances=instances_t2+instances_m4
     time.sleep(60)
+
+    #Enregistrement targets
+    register_targets(instances_t2,target_group_1)
+    register_targets(instances_m4,target_group_2)
+
+
+    #Load balancer 
+    load_balancer=create_load_balancer(subnets,security_group_id)
+    print('load balancer')
+
+    print(target_group_2)
+    total_instances=instances_t2+instances_m4
+    time.sleep(160)
     terminate_instances(total_instances,ec2)
     print("Instances terminated")
