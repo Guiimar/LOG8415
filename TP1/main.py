@@ -23,7 +23,6 @@ def create_connection_ec2(key_id, access_key, session_token):
                       aws_session_token= session_token) 
     return(ec2)
     
-alb_client = boto3.client('elbv2', region_name='us-east-1')
 
 #Create instances : 
 def create_instance_ec2(num_instances,ami_id,
@@ -53,16 +52,15 @@ def create_instance_ec2(num_instances,ami_id,
         print(f'{instances[i]} is starting')
     return instances
 
-def create_target_group(group_name,vpc_id):
+def create_target_group(targetname,vpc_id):
     tg_response=client.create_target_group(
-        Name=group_name,
+        Name=targetname,
         Protocol='HTTP',
         Port=80,
-        VpcId=vpc_id
+        VpcId=vpc_id,
+        TargetType ='instance'
     )
-    target_group_arn = tg_response["TargetGroups"][0]["TargetGroupArn"]
-    #Register target?
-    
+    target_group_arn = tg_response["TargetGroups"][0]["TargetGroupArn"]    
     return target_group_arn
 
 def register_targets(instances_ids):
@@ -110,20 +108,23 @@ def terminate_instances(instances_ids,resource):
 
 # Here is the main program :
 if __name__ == '__main__':
-    key_id="ASIAZWRC4RAEAGX6KGFH"
+    key_id="ASIA37YNGERBT6X6LQTC"
     
-    access_key="EHoHpJirh5FU/KZA8ZcIaydZq+rsTh8791MBkDvC"
+    access_key="ndrRz7s0K2gKwCdexLh3F7tSvLrhDNtkEHv1Gozg"
     
 
-    session_token="FwoGZXIvYXdzEJ3//////////wEaDGk0yV3u3CA5uqDnpiLKAUSQY+lwfobIBiYYi8KpayUJh2lHLZTVaZoIwOhtSXtAPmPENLdqjzlW/xbn53FayrP4R86S/OsD3ArolCK3kGZYtkgqUXzHt33B6Cf1zSyMCfcHh1oDR0O7Ixj3/BLPjGx0cvVBmbA33wWWAFuUFrcpz+Uas03F2d6LppaNDXlrTzhR01HaISC6skdZOnOK7codTd6ctQzh/1++45M/LriPh0p+5LIE3qPbYmcZB6XEuzCCMtvbXH1UXzkEVd7XqldEa63V7HHgtlAoqNDOqAYyLfwPAUTLSgPfUtMaTexUDsY+l4I50uzfleLzRmBTvMUnPdG6xaKiWLgYElpMYA=="
+    session_token="FwoGZXIvYXdzEKr//////////wEaDBO5ze9K0vRG+ashZCLOAU0/95fFC+tjNFPeM7QOEnhtztXUO0eZZytXAEulebfcWHep2MZKlMhgjsqtOGxS1hZ7HfvoXW9bsTwMVnT3DBavYP6PPINFXQjexeEegaalIRXaKKwufyF6feVMVH6XkXRxqY6E1Tc7/yJwaO3nR5hqjVj+SRgqjY7K8pzA7/gaxopW6nt8Xu/M5XlRq951SIlps2YKxyesvYsEud0uGlDztap7uyR7kEbDdUJwDYVShJuRnRgYR45n7K3C25xGQZdRhHrgjXZ234BewLBQKI+40agGMi1+WsdAzD767xhcOfSXY6FCqB7ZGdHFdVEMq6ASBqlAc+Zp7dtDqBqwT2PYHko="
     
-    ami_id = "ami-08bf0e5db5b302e19"
+    ami_id ='ami-03a6eaae9938c858c'
     # Connection created : 
     ec2 = create_connection_ec2(key_id, access_key, session_token)
+    client = boto3.client('elbv2', region_name='us-east-1',aws_access_key_id= key_id,
+                       aws_secret_access_key=access_key ,
+                      aws_session_token= session_token)
     print("\n\n Connection made succefuly \n\n")
 
     key_pair_name = "vockey"
-    security_group_id = "sg-0512a04b7ff12441a"
+    security_group_id = "sg-06437851b56b69a96"
 
     vpc_id="vpc-0d882582a823a8039"
     # Create 4 instances with t2.large as intance type: 
@@ -139,6 +140,9 @@ if __name__ == '__main__':
     instances_m4= create_instance_ec2(3,ami_id, instance_type,key_pair_name,ec2,security_group_id)
     print(instances_m4)
     print("\n\n instances created succefuly instance type  : m4.large")
+
+    target_group_1=create_target_group('TargetGroup1',vpc_id)
+    target_group_2=create_target_group('TargetGroup2',vpc_id)
 
     total_instances=instances_t2+instances_m4
     time.sleep(60)
