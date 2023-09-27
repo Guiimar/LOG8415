@@ -1,3 +1,17 @@
+#STEPS# 
+#On est dans la région us-east 1, qui a 6 avaibility zones 
+#C’est demandé de créer les instances EC2 dans différents AZ (On peut utiliser AZ a,b,c pour EC2s du Target group 1 et AZ d,e,f pour Target group 2)
+#Dans la région , il faut créer un VPC (Virtual private clouds) notre réseau privé.
+#Puis  ajouter des subnets au VPC (Un subnet par AZ). 
+#On crée les instances EC2 (inputs={TBD}) Avec Flask
+#Create Target Group (inputs={TBD})
+#Enregistrer les instances dans les targets groups (inputs={TBD})
+#S’assurer que si on envoie une requete au TG1 , seuls EC2s de TG1 répondent, de même pour TG2.
+#Créer un load balancer (inputs={TBD})
+#Créer des listeners (routes qui lient les load balancers aux targets routes) (inputs={TBD})
+#Créer des listeners rules ( règles de liaison de traffic entre les listeners) (inputs={TBD})
+
+
 import boto3
 
 #for crating the connection to EC2 : 
