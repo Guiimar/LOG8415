@@ -1,12 +1,39 @@
-import boto3
+#STEPS# 
+#On est dans la région us-east 1, qui a 6 avaibility zones 
+#C’est demandé de créer les instances EC2 dans différents AZ (On peut utiliser AZ a,b,c pour EC2s du Target group 1 et AZ d,e,f pour Target group 2)
+#Dans la région , il faut créer un VPC (Virtual private clouds) notre réseau privé.
+#Puis  ajouter des subnets au VPC (Un subnet par AZ). 
+#On crée les instances EC2 (inputs={TBD}) Avec Flask
+#Create Target Group (inputs={TBD})
+#Enregistrer les instances dans les targets groups (inputs={TBD})
+#S’assurer que si on envoie une requete au TG1 , seuls EC2s de TG1 répondent, de même pour TG2.
+#Créer un load balancer (inputs={TBD})
+#Créer des listeners (routes qui lient les load balancers aux targets routes) (inputs={TBD})
+#Créer des listeners rules ( règles de liaison de traffic entre les listeners) (inputs={TBD})
 
-def create_instance_ec2(num_instances,ami_id,instance_type,key_pair_name,resource,count,security_group_id=None):
+
+import boto3
+import time
+#for crating the connection to EC2 : 
+def create_connection_ec2(key_id, access_key, session_token):
+    ec2 =  boto3.resource('ec2',
+                       'us-east-1',
+                       aws_access_key_id= key_id,
+                       aws_secret_access_key=access_key ,
+                      aws_session_token= session_token) 
+    return(ec2)
+    
+alb_client = boto3.client('elbv2', region_name='us-east-1')
+
+#Create instances : 
+def create_instance_ec2(num_instances,ami_id,
+    instance_type,key_pair_name,resource,security_group_id):
     instances=[]
     for i in range(num_instances):
-        instances.append(resource.create_instances(
+        instance=resource.create_instances(
             ImageId=ami_id,
             InstanceType=instance_type,
-            KeyName=key_pair_name["KeyName"],
+            KeyName=key_pair_name,
             MinCount=1,
             MaxCount=1,
             SecurityGroupIds=[security_group_id] if security_group_id else [],
@@ -16,12 +43,13 @@ def create_instance_ec2(num_instances,ami_id,instance_type,key_pair_name,resourc
                         'Tags': [
                             {
                                 'Key': 'Name',
-                                'Value': 'lab1-ec2-instance-' + str(i + 1)
+                                'Value': 'lab1-ec2-instance-'+str(instance_type)+ str(i + 1)
                             },
                         ]
                     },
                 ]
-        ))
+        )
+        instances.append(instance[0].id)
         print(f'{instances[i]} is starting')
     return instances
 
@@ -47,7 +75,7 @@ def register_targets(instances_ids):
         Targets=targets
     )
 
-    returntg_registered
+    return tg_registered
 
 
 
@@ -75,3 +103,44 @@ def create_listener(load_balancer_arn,target_group_arn):
     )
     return response_listener
 
+def terminate_instances(instances_ids,resource):
+    for x in instances_ids:
+        resource.Instance(x).terminate()
+    return("Instances terminated")
+
+# Here is the main program :
+if __name__ == '__main__':
+    key_id="ASIAZWRC4RAEAGX6KGFH"
+    
+    access_key="EHoHpJirh5FU/KZA8ZcIaydZq+rsTh8791MBkDvC"
+    
+
+    session_token="FwoGZXIvYXdzEJ3//////////wEaDGk0yV3u3CA5uqDnpiLKAUSQY+lwfobIBiYYi8KpayUJh2lHLZTVaZoIwOhtSXtAPmPENLdqjzlW/xbn53FayrP4R86S/OsD3ArolCK3kGZYtkgqUXzHt33B6Cf1zSyMCfcHh1oDR0O7Ixj3/BLPjGx0cvVBmbA33wWWAFuUFrcpz+Uas03F2d6LppaNDXlrTzhR01HaISC6skdZOnOK7codTd6ctQzh/1++45M/LriPh0p+5LIE3qPbYmcZB6XEuzCCMtvbXH1UXzkEVd7XqldEa63V7HHgtlAoqNDOqAYyLfwPAUTLSgPfUtMaTexUDsY+l4I50uzfleLzRmBTvMUnPdG6xaKiWLgYElpMYA=="
+    
+    ami_id = "ami-08bf0e5db5b302e19"
+    # Connection created : 
+    ec2 = create_connection_ec2(key_id, access_key, session_token)
+    print("\n\n Connection made succefuly \n\n")
+
+    key_pair_name = "vockey"
+    security_group_id = "sg-0512a04b7ff12441a"
+
+    vpc_id="vpc-0d882582a823a8039"
+    # Create 4 instances with t2.large as intance type: 
+    instance_type = "t2.large"
+    print("\n\n creating instances, type : t2.large\n\n")
+    instances_t2= create_instance_ec2(3,ami_id, instance_type,key_pair_name,ec2,security_group_id)
+    print(instances_t2)
+    print("\n\n instances created succefuly instance type : t2.large")
+
+    # Create 4 instances with m4.large as instance type:
+    instance_type = "m4.large"
+    print("\n\n creating instances, type : m4.large\n\n")
+    instances_m4= create_instance_ec2(3,ami_id, instance_type,key_pair_name,ec2,security_group_id)
+    print(instances_m4)
+    print("\n\n instances created succefuly instance type  : m4.large")
+
+    total_instances=instances_t2+instances_m4
+    time.sleep(60)
+    terminate_instances(total_instances,ec2)
+    print("Instances terminated")

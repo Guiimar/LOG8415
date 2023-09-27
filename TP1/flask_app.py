@@ -4,6 +4,7 @@ app = Flask(__name__)
 
 @app.route("/")
 @app.route("/cluster1")
+@app.route("/cluster2")
 
 def cluster1_route():
     return ("Cluster number 1 is responding now !")
