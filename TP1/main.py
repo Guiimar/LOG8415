@@ -99,10 +99,32 @@ def create_listener(load_balancer_arn,target_group_arn,port):
         },
     ]
     )
-    return response_listener
+    response_listener_arn=response_listener["Listeners"][0]["ListenerArn"]
+    return response_listener_arn
 
-def create_listener_rule():
-    
+def create_listener_rule(listener_arn, target_group_arn, path):
+    response = client.create_rule(
+        ListenerArn=listener_arn,
+        Priority=1,
+        Conditions=[
+            {
+                'Field': 'path-pattern',
+                'Values': [path]
+            }
+        ],
+        Actions=[
+            {
+                'Type': 'forward',
+                'ForwardConfig': {
+                    'TargetGroups': [{'TargetGroupArn': target_group_arn}]
+                }
+            }
+        ]
+    )
+    response_rule_listener = response['Rules'][0]['RuleArn']
+    return response_rule_listener
+
+
 
 def terminate_instances(instances_ids,resource):
     for x in instances_ids:
@@ -158,7 +180,7 @@ if __name__ == '__main__':
     target_group_1=create_target_group('TargetGroup1',vpc_id,80)
     target_group_2=create_target_group('TargetGroup2',vpc_id,8080)
 
-    time.sleep(60)
+    time.sleep(120)
 
     #Enregistrement targets
     register_targets(instances_t2,target_group_1,80)
@@ -175,7 +197,10 @@ if __name__ == '__main__':
     listener_group2=create_listener(load_balancer,target_group_2,8080)
     print('Listeners créés')
 
-
+    #Create rules
+    rule_list_1=create_listener_rule(listener_group1,target_group_1,'/cluster1')
+    rule_list_2=create_listener_rule(listener_group2,target_group_2,'/cluster2')
+    print('Règles créées')
 
     total_instances=instances_t2+instances_m4
     time.sleep(160)
