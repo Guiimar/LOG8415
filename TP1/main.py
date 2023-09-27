@@ -27,7 +27,7 @@ def create_instance_ec2(num_instances,ami_id,
                         'Tags': [
                             {
                                 'Key': 'Name',
-                                'Value': 'lab1-ec2-instance-' + str(i + 1)
+                                'Value': 'lab1-ec2-instance-'+str(instance_type)+ str(i + 1)
                             },
                         ]
                     },
@@ -102,12 +102,14 @@ if __name__ == '__main__':
 
     # Create 4 instances with t2.large as intance type: 
     instance_type = "t2.large"
+    print("\n\n creating instances, type : t2.large\n\n")
     instances = create_instance_ec2(4,ami_id, instance_type,key_pair_name,ec2,security_group_id)
     print(instances)
     print("\n\n instances created succefuly instance type : t2.large")
 
     # Create 4 instances with m4.large as instance type:
     instance_type = "m4.large"
+    print("\n\n creating instances, type : m4.large\n\n")
     instances = create_instance_ec2(4,ami_id, instance_type,key_pair_name,ec2,security_group_id)
     print(instances)
     print("\n\n instances created succefuly instance type  : m4.large")
