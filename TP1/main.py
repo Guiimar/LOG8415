@@ -11,7 +11,7 @@
 #Créer des listeners (routes qui lient les load balancers aux targets routes) (inputs={TBD})
 #Créer des listeners rules ( règles de liaison de traffic entre les listeners) (inputs={TBD})
 
-
+import configparser
 import boto3
 import time
 #for crating the connection to EC2 : 
@@ -108,14 +108,22 @@ def terminate_instances(instances_ids,resource):
 
 # Here is the main program :
 if __name__ == '__main__':
+    # Get credentials from the config file :
+    config_object = configparser.ConfigParser()
+    with open("credentials.ini","r") as file_object:
+        config_object.read_file(file_object)
+        key_id = config_object.get("resource","key_id")
+        access_key = config_object.get("resource","access_key")
+        session_token = config_object.get("resource","session_token")
+        ami_id = config_object.get("ami","ami_id")
+        
+    """
     key_id="ASIA37YNGERBT6X6LQTC"
-    
     access_key="ndrRz7s0K2gKwCdexLh3F7tSvLrhDNtkEHv1Gozg"
-    
-
     session_token="FwoGZXIvYXdzEKr//////////wEaDBO5ze9K0vRG+ashZCLOAU0/95fFC+tjNFPeM7QOEnhtztXUO0eZZytXAEulebfcWHep2MZKlMhgjsqtOGxS1hZ7HfvoXW9bsTwMVnT3DBavYP6PPINFXQjexeEegaalIRXaKKwufyF6feVMVH6XkXRxqY6E1Tc7/yJwaO3nR5hqjVj+SRgqjY7K8pzA7/gaxopW6nt8Xu/M5XlRq951SIlps2YKxyesvYsEud0uGlDztap7uyR7kEbDdUJwDYVShJuRnRgYR45n7K3C25xGQZdRhHrgjXZ234BewLBQKI+40agGMi1+WsdAzD767xhcOfSXY6FCqB7ZGdHFdVEMq6ASBqlAc+Zp7dtDqBqwT2PYHko="
-    
     ami_id ='ami-03a6eaae9938c858c'
+    """
+
     # Connection created : 
     ec2 = create_connection_ec2(key_id, access_key, session_token)
     client = boto3.client('elbv2', region_name='us-east-1',aws_access_key_id= key_id,
