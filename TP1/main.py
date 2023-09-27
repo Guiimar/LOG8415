@@ -1,10 +1,16 @@
 import boto3
 
 #for crating the connection to EC2 : 
+# Below the credentials to the aws account :
+"""
+key_id="ASIAZWRC4RAEAGX6KGFH"
+access_key="EHoHpJirh5FU/KZA8ZcIaydZq+rsTh8791MBkDvC"
+session_token="FwoGZXIvYXdzEJ3//////////wEaDGk0yV3u3CA5uqDnpiLKAUSQY+lwfobIBiYYi8KpayUJh2lHLZTVaZoIwOhtSXtAPmPENLdqjzlW/xbn53FayrP4R86S/OsD3ArolCK3kGZYtkgqUXzHt33B6Cf1zSyMCfcHh1oDR0O7Ixj3/BLPjGx0cvVBmbA33wWWAFuUFrcpz+Uas03F2d6LppaNDXlrTzhR01HaISC6skdZOnOK7codTd6ctQzh/1++45M/LriPh0p+5LIE3qPbYmcZB6XEuzCCMtvbXH1UXzkEVd7XqldEa63V7HHgtlAoqNDOqAYyLfwPAUTLSgPfUtMaTexUDsY+l4I50uzfleLzRmBTvMUnPdG6xaKiWLgYElpMYA=="
+"""
 ec2 =  boto3.client('ec2',
                    'us-east-1',
                    aws_access_key_id= key_id,
-                   aws_secret_access_key=secret_access_key ,
+                   aws_secret_access_key=access_key ,
                   aws_session_token= session_token) 
 #send request and getting the response from the instance
 response = ec2.describe_instances()
