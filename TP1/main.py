@@ -16,12 +16,12 @@ import boto3
 import time
 
 #Function to establish connection with AWS CLI credentials: 
-def create_connection_ec2(key_id, access_key, session_token):
+def create_connection_ec2(aws_access_key_id, aws_secret_access_key, aws_session_token):
     ec2 =  boto3.resource('ec2',
                        'us-east-1',
-                       aws_access_key_id= key_id,
-                       aws_secret_access_key=access_key ,
-                      aws_session_token= session_token) 
+                       aws_access_key_id= aws_access_key_id,
+                       aws_secret_access_key=aws_secret_access_key ,
+                      aws_session_token= aws_session_token) 
     return(ec2)
     
 
@@ -137,8 +137,6 @@ def terminate_instances(instances_ids,resource):
     return("Instances terminated")
 
 
-
-
 # Here is the main program :
 
 if __name__ == '__main__':
@@ -146,9 +144,9 @@ if __name__ == '__main__':
     config_object = configparser.ConfigParser()
     with open("credentials.ini","r") as file_object:
         config_object.read_file(file_object)
-        key_id = config_object.get("resource","key_id")
-        access_key = config_object.get("resource","access_key")
-        session_token = config_object.get("resource","session_token")
+        key_id = config_object.get("resource","aws_access_key_id")
+        access_key = config_object.get("resource","aws_secret_access_key")
+        session_token = config_object.get("resource","aws_session_token")
         ami_id = config_object.get("ami","ami_id")
         
     """
@@ -160,13 +158,14 @@ if __name__ == '__main__':
 
     # Connection created : 
     ec2 = create_connection_ec2(key_id, access_key, session_token)
+
     client = boto3.client('elbv2', region_name='us-east-1',aws_access_key_id= key_id,
                        aws_secret_access_key=access_key ,
                       aws_session_token= session_token)
     print("\n\n Connection made succefuly \n\n")
 
     key_pair_name = "vockey"
-    security_group_id = "sg-06437851b56b69a96"
+    security_group_id = "sg-0f999a2e0ed7b1b86"
 
     vpc_id="vpc-0d882582a823a8039"
 
