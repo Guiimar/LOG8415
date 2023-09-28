@@ -15,4 +15,4 @@ def cluster2_route():
     return ("Cluster number 2 is responding now !")
 
 if __name__=='__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=8080)
