@@ -14,7 +14,8 @@
 import configparser
 import boto3
 import time
-#for crating the connection to EC2 : 
+
+#Function to establish connection with AWS CLI credentials: 
 def create_connection_ec2(key_id, access_key, session_token):
     ec2 =  boto3.resource('ec2',
                        'us-east-1',
@@ -24,7 +25,7 @@ def create_connection_ec2(key_id, access_key, session_token):
     return(ec2)
     
 
-#Create instances : 
+#Function to create EC2 instances : 
 def create_instance_ec2(num_instances,ami_id,
     instance_type,key_pair_name,resource,security_group_id):
     instances=[]
@@ -52,6 +53,7 @@ def create_instance_ec2(num_instances,ami_id,
         print(f'{instances[i]} is starting')
     return instances
 
+#Function to create target groups : 
 def create_target_group(targetname,vpc_id,port):
     tg_response=client.create_target_group(
         Name=targetname,
@@ -63,6 +65,7 @@ def create_target_group(targetname,vpc_id,port):
     target_group_arn = tg_response["TargetGroups"][0]["TargetGroupArn"]    
     return target_group_arn
 
+#Function to register targets in target groups : 
 def register_targets(instances_ids,target_group_arn,port):
     targets=[]
     for instance_id in instances_ids:
@@ -76,7 +79,7 @@ def register_targets(instances_ids,target_group_arn,port):
     return tg_registered
 
 
-
+#Function to create load balancer : 
 def create_load_balancer(subnets,security_group):
     response = client.create_load_balancer(
         Name="my-load-balancer",
@@ -87,6 +90,7 @@ def create_load_balancer(subnets,security_group):
 
     return load_balancer_arn
 
+#Function to create listeners:
 def create_listener(load_balancer_arn,target_group_arn,port):
     response_listener=client.create_listener(
     LoadBalancerArn=load_balancer_arn,
@@ -102,6 +106,7 @@ def create_listener(load_balancer_arn,target_group_arn,port):
     response_listener_arn=response_listener["Listeners"][0]["ListenerArn"]
     return response_listener_arn
 
+#Function to create listener rules
 def create_listener_rule(listener_arn, target_group_arn, path):
     response = client.create_rule(
         ListenerArn=listener_arn,
@@ -125,13 +130,17 @@ def create_listener_rule(listener_arn, target_group_arn, path):
     return response_rule_listener
 
 
-
+# Function to terminate EC2 instances when not needed
 def terminate_instances(instances_ids,resource):
     for x in instances_ids:
         resource.Instance(x).terminate()
     return("Instances terminated")
 
+
+
+
 # Here is the main program :
+
 if __name__ == '__main__':
     # Get credentials from the config file :
     config_object = configparser.ConfigParser()
@@ -162,6 +171,7 @@ if __name__ == '__main__':
     vpc_id="vpc-0d882582a823a8039"
 
     subnets=['subnet-053bd769717aa1641','subnet-00aebad3742819994']
+
     # Create 4 instances with t2.large as intance type: 
     instance_type = "t2.large"
     print("\n\n creating instances, type : t2.large\n\n")
@@ -176,32 +186,33 @@ if __name__ == '__main__':
     print(instances_m4)
     print("\n\n instances created succefuly instance type  : m4.large")
 
-    #creation des targets groups
+    #Creaye the two targets groups (Clusters)
     target_group_1=create_target_group('TargetGroup1',vpc_id,80)
     target_group_2=create_target_group('TargetGroup2',vpc_id,8080)
 
     time.sleep(120)
 
-    #Enregistrement targets
+    # Targets registration on target groups
     register_targets(instances_t2,target_group_1,80)
     register_targets(instances_m4,target_group_2,8080)
 
 
-    #Load balancer 
+    #Create Load balancer 
     load_balancer=create_load_balancer(subnets,security_group_id)
     print('load balancer')
 
-    #Creation listener
+    #Create listeners listener
     listener_group1=create_listener(load_balancer,target_group_1,80)
 
     listener_group2=create_listener(load_balancer,target_group_2,8080)
     print('Listeners créés')
 
-    #Create rules
+    #Create listeners rules
     rule_list_1=create_listener_rule(listener_group1,target_group_1,'/cluster1')
     rule_list_2=create_listener_rule(listener_group2,target_group_2,'/cluster2')
     print('Règles créées')
 
+    #Terminate EC2 instances when not needed
     total_instances=instances_t2+instances_m4
     time.sleep(160)
     terminate_instances(total_instances,ec2)
