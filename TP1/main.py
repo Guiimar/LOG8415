@@ -24,15 +24,36 @@ def create_connection_ec2(aws_access_key_id, aws_secret_access_key, aws_session_
                       aws_session_token= aws_session_token) 
     return(ec2)
     
-#Function to create security group:
+#Function to create security group with adding outbounded and inbounded rules with all permissions:
 def create_security_group(Description,Groupe_name,vpc_id,resource):
 
-    Security_group_info=resource.create_security_group(
+    Security_group_ID=resource.create_security_group(
         Description=Description,
         GroupName=Groupe_name,
         VpcId=vpc_id)
     
-    return Security_group_info
+    #Add an inbounded allowing inbounded traffics of all protocols, from and to all ports, and all Ipranges.  
+    resource.authorize_security_group_ingress(
+        GroupID=Security_group_ID,
+        Ippermissions=[
+            {'FromPort':-1,
+             'ToPort':-1,
+             'IpProtocol':-1,
+             'IpRanges':[{'CidrIp':'0.0.0.0/0'}]
+            }]
+        )
+    #Add an inbounded allowing outbounded traffics of all protocols, from and to all ports, and all Ipranges.      
+    resource.authorize_security_group_engress(
+        GroupID=Security_group_ID,
+        Ippermissions=[
+            {'FromPort':-1,
+             'ToPort':-1,
+             'IpProtocol':-1,
+             'IpRanges':[{'CidrIp':'0.0.0.0/0'}]
+            }]
+        )
+    
+    return Security_group_ID
 
 #Function to create EC2 instances : 
 def create_instance_ec2(num_instances,ami_id,
