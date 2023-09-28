@@ -24,6 +24,15 @@ def create_connection_ec2(aws_access_key_id, aws_secret_access_key, aws_session_
                       aws_session_token= aws_session_token) 
     return(ec2)
     
+#Function to create security group:
+def create_security_group(Description,Groupe_name,vpc_id,resource):
+
+    Security_group_info=resource.create_security_group(
+        Description=Description,
+        GroupName=Groupe_name,
+        VpcId=vpc_id)
+    
+    return Security_group_info
 
 #Function to create EC2 instances : 
 def create_instance_ec2(num_instances,ami_id,
@@ -165,10 +174,11 @@ if __name__ == '__main__':
     print("\n\n Connection made succefuly \n\n")
 
     key_pair_name = "vockey"
-    security_group_id = "sg-0f999a2e0ed7b1b86"
+    vpc_id="vpc-0f3ea546cf855be58"
 
-    vpc_id="vpc-0d882582a823a8039"
-
+    # Create security group for vpcId : 
+    security_group_id =create_security_group('Security_group_created_for_lab','Security_group',vpc_id,ec2)
+    print(security_group_id)
     subnets=['subnet-053bd769717aa1641','subnet-00aebad3742819994']
 
     # Create 4 instances with t2.large as intance type: 
