@@ -23,37 +23,33 @@ def create_connection_ec2(aws_access_key_id, aws_secret_access_key, aws_session_
                        aws_secret_access_key=aws_secret_access_key ,
                       aws_session_token= aws_session_token) 
     return(ec2)
-    
-#Function to create security group with adding outbounded and inbounded rules with all permissions:
+
+def create_vpc(CidrBlock,resource):
+    VPC_Id=resource.create_vpc(CidrBlock=CidrBlock).id
+    return VPC_Id
+
+#Function to create security group with adding inbounded rules with all permissions:
 def create_security_group(Description,Groupe_name,vpc_id,resource):
 
     Security_group_ID=resource.create_security_group(
         Description=Description,
         GroupName=Groupe_name,
-        VpcId=vpc_id)
+        VpcId=vpc_id).id
+    
+    Security_group=resource.SecurityGroup(Security_group_ID)
     
     #Add an inbounded allowing inbounded traffics of all protocols, from and to all ports, and all Ipranges.  
-    resource.authorize_security_group_ingress(
-        GroupID=Security_group_ID,
-        Ippermissions=[
+    Security_group.authorize_ingress(
+         IpPermissions=[
             {'FromPort':-1,
              'ToPort':-1,
-             'IpProtocol':-1,
+             'IpProtocol':'-1',
              'IpRanges':[{'CidrIp':'0.0.0.0/0'}]
             }]
-        )
-    #Add an inbounded allowing outbounded traffics of all protocols, from and to all ports, and all Ipranges.      
-    resource.authorize_security_group_engress(
-        GroupID=Security_group_ID,
-        Ippermissions=[
-            {'FromPort':-1,
-             'ToPort':-1,
-             'IpProtocol':-1,
-             'IpRanges':[{'CidrIp':'0.0.0.0/0'}]
-            }]
-        )
-    
+    )
+            
     return Security_group_ID
+
 
 #Function to create EC2 instances : 
 def create_instance_ec2(num_instances,ami_id,
@@ -195,8 +191,10 @@ if __name__ == '__main__':
     print("\n\n Connection made succefuly \n\n")
 
     key_pair_name = "vockey"
-    vpc_id="vpc-0f3ea546cf855be58"
 
+    # Create Vpc : 
+    vpc_id=create_vpc('172.31.0.0/16',ec2)
+    print(vpc_id)
     # Create security group for vpcId : 
     security_group_id =create_security_group('Security_group_created_for_lab','Security_group',vpc_id,ec2)
     print(security_group_id)
