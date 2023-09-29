@@ -14,6 +14,7 @@
 import configparser
 import boto3
 import time
+import random
 
 # Define a client connection :
 def client_connection_ec2(aws_access_key_id, aws_secret_access_key, aws_session_token):
@@ -66,7 +67,7 @@ def create_security_group(Description,Groupe_name,vpc_id,resource):
 
 #Function to create EC2 instances : 
 def create_instance_ec2(num_instances,ami_id,
-    instance_type,key_pair_name,resource,security_group_id):
+    instance_type,key_pair_name,resource,security_group_id,Availabilityzons):
     instances=[]
     for i in range(num_instances):
         instance=resource.create_instances(
@@ -75,6 +76,7 @@ def create_instance_ec2(num_instances,ami_id,
             KeyName=key_pair_name,
             MinCount=1,
             MaxCount=1,
+            Placement={'AvailabilityZone':Availabilityzons[i]},
             SecurityGroupIds=[security_group_id] if security_group_id else [],
             TagSpecifications=[
                     {
@@ -89,7 +91,9 @@ def create_instance_ec2(num_instances,ami_id,
                 ]
         )
         instances.append(instance[0].id)
-        print(f'{instances[i]} is starting')
+        print ('Creating instance: ',i+1,' having the Id: ',instance[0], ' in Availability Zone: ', Availabilityzons[i], 'is starting\n')
+        #print(f'{instances[i]} is starting')
+
     return instances
 
 #Function to create target groups : 
@@ -267,20 +271,24 @@ if __name__ == '__main__':
     #subnets=['subnet-053bd769717aa1641','subnet-00aebad3742819994']
 
     
-    # Create 4 instances with t2.large as intance type: 
+    # Create 4 instances with t2.large as intance type
+    #By choice, we create the 4 EC2 instances for Cluster 1 in availability zones us-east-1a and us-east-1b: 
+    Availabilityzons_Cluster1=['us-east-1a','us-east-1b','us-east-1a','us-east-1b','us-east-1a']
     instance_type = "t2.large"
-    print("\n\n creating instances, type : t2.large\n\n")
-    instances_t2= create_instance_ec2(3,ami_id, instance_type,key_pair_name,ec2,security_group_id)
-    print(instances_t2)
-    print("\n\n instances created succefuly instance type : t2.large")
+    print("\n\n Creating instances of Cluster 1 with type : t2.large\n\n")
+    instances_t2= create_instance_ec2(5,ami_id, instance_type,key_pair_name,ec2,security_group_id,Availabilityzons_Cluster1)
+    #print(instances_t2)
+    print("\n\n Instances created succefuly instance type : t2.large")
 
 
-    # Create 4 instances with m4.large as instance type:
+    # Create 5 instances with m4.large as instance type:
+    #By choice, we create the 5 EC2 instances for Cluster 2 in avaibility zones us-east-1c and us-east-1d: 
+    Availabilityzons_Cluster2=['us-east-1c','us-east-1d','us-east-1c','us-east-1d']
     instance_type = "m4.large"
-    print("\n\n creating instances, type : m4.large\n\n")
-    instances_m4= create_instance_ec2(3,ami_id, instance_type,key_pair_name,ec2,security_group_id)
-    print(instances_m4)
-    print("\n\n instances created succefuly instance type  : m4.large")
+    print("\n\n Creating instances, type : m4.large\n\n")
+    instances_m4= create_instance_ec2(4,ami_id, instance_type,key_pair_name,ec2,security_group_id,Availabilityzons_Cluster2)
+    #print(instances_m4)
+    print("\n\n Instances created succefuly instance type  : m4.large")
 
     #Creaye the two targets groups (Clusters)
     target_group_1=create_target_group('TargetGroup1',vpc_id,80, ec2)
