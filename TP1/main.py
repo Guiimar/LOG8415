@@ -254,7 +254,17 @@ if __name__ == '__main__':
     print("\n"+security_group_id+"\n")"""
     
     
-    subnets=['subnet-053bd769717aa1641','subnet-00aebad3742819994']
+    #Get the standard subnets from the standard VPC :
+    subnets= client.describe_subnets(Filters=[
+         {
+            'Name': 'vpc-id',
+            'Values': [
+                vpc_id,
+            ]
+        }
+    ])
+    print(subnets)
+    #subnets=['subnet-053bd769717aa1641','subnet-00aebad3742819994']
 
     
     # Create 4 instances with t2.large as intance type: 
