@@ -107,7 +107,7 @@ def create_instance_ec2(num_instances,ami_id,
                 ]
         )
         instances.append(instance[0].id)
-        print ('Instance: ',i+1,' having the Id: ',instance[0], ' in Availability Zone: ', Availabilityzons[i], 'is created\n')
+        print ('Instance: ',i+1,' having the Id: ',instance[0], ' in Availability Zone: ', Availabilityzons[i], 'is created')
         #print(f'{instances[i]} is starting')
    
     return instances
@@ -188,7 +188,7 @@ def create_listener_rule(elbv2_seviceclient,listener_arn, target_group_arn, path
     response_rule_listener = response['Rules'][0]['RuleArn']
     return response_rule_listener
 
-
+#------------------------------------Functions for EC2s instances termination and Load balancer and target groups deletion ----------------------------------------------------
 #Function to terminate EC2 instances when not needed
 def terminate_instances(ec2_serviceresource,instances_ids):
     for id in instances_ids:
@@ -234,13 +234,13 @@ if __name__ == '__main__':
     #--------------------------------------Creating ec2 and elbv2 resource and client services--------------------------------
     #Create ec2 service resource with our credentials:
     ec2_serviceresource = resource_ec2(key_id, access_key, session_token)
-    print("\n============> ec2 resource creation has been made succesfuly!!!!<=================\n")
+    print("============> ec2 resource creation has been made succesfuly!!!!<=================")
     #Create ec2 service client with our credentials:
     ec2_serviceclient = client_ec2(key_id, access_key, session_token)
-    print("\n============> ec2 client creation has been made succesfuly!!!!<=================\n")
+    print("============> ec2 client creation has been made succesfuly!!!!<=================")
     #Create elbv2 service client with our credentials:
     elbv2_serviceclient = client_elbv2(key_id, access_key, session_token)
-    print("\n============> elbv2 client creation has been made succesfuly!!!!<=================\n")
+    print("============> elbv2 client creation has been made succesfuly!!!!<=================")
 
     #---------------------------------------------------Get default VPC ID----------------------------------------------------
     #Get default vpc description : 
@@ -299,22 +299,22 @@ if __name__ == '__main__':
 #--------------------------------------Create Instances of cluster 1 ------------------------------------------------------------
 
     # Create 4 instances with t2.large as intance type,
-    'By choice, we create the 5 EC2 instances for Cluster 1 in availability zones us-east-1a and us-east-1b'
+    'By choice, we create the 4 EC2 instances for Cluster 1 in availability zones us-east-1a and us-east-1b'
     Availabilityzons_Cluster1=['us-east-1a','us-east-1b','us-east-1a','us-east-1b','us-east-1a']
     instance_type = "t2.large"
-    print("\n Creating instances of Cluster 1 with type : t2.large\n")
-    instances_t2= create_instance_ec2(5,ami_id, instance_type,key_pair_name,ec2_serviceresource,security_group_id,Availabilityzons_Cluster1)
+    print("\n Creating instances of Cluster 1 with type : t2.large")
+    instances_t2= create_instance_ec2(4,ami_id, instance_type,key_pair_name,ec2_serviceresource,security_group_id,Availabilityzons_Cluster1)
     #print(instances_t2)
     print("\n Instances created succefuly instance type : t2.large")
 
 #--------------------------------------Create Instances of cluster 2 -------------------------------------------------------------
 
     # Create 5 instances with m4.large as instance type:
-    'By choice, we create the 4 EC2 instances for Cluster 2 in avaibility zones us-east-1c and us-east-1d'
-    Availabilityzons_Cluster2=['us-east-1c','us-east-1d','us-east-1c','us-east-1d']
+    'By choice, we create the 5 EC2 instances for Cluster 2 in avaibility zones us-east-1c and us-east-1d'
+    Availabilityzons_Cluster2=['us-east-1c','us-east-1d','us-east-1c','us-east-1d','us-east-1c']
     instance_type = "m4.large"
-    print("\n Creating instances, type : m4.large\n")
-    instances_m4= create_instance_ec2(4,ami_id, instance_type,key_pair_name,ec2_serviceresource,security_group_id,Availabilityzons_Cluster2)
+    print("\n Creating instances of Cluster 2 with type : m4.large")
+    instances_m4= create_instance_ec2(5,ami_id, instance_type,key_pair_name,ec2_serviceresource,security_group_id,Availabilityzons_Cluster2)
     #print(instances_m4)
     print("\n Instances created succefuly instance type  : m4.large")
 
@@ -325,15 +325,15 @@ if __name__ == '__main__':
     target_group_2=create_target_group('TargetGroup2',vpc_id,8080, elbv2_serviceclient)
     print("\nTarget groups created")
 
-
-    time.sleep(120)
+    #time to wait for udate ec2 running status before registration in target groups
+    time.sleep(60)
 
 #---------------------------------------------Register Targets on target groups --------------------------------------------------
 
     #Targets registration on target groups
     register_targets(elbv2_serviceclient,instances_t2,target_group_1,80) 
     register_targets(elbv2_serviceclient,instances_m4,target_group_2,8080)
-    print("\nTargets registred")
+    print("Targets registred")
 
 #----------------------------Get mapping between availability zones and Ids of default vpc subnets -------------------------------
 
@@ -356,23 +356,26 @@ if __name__ == '__main__':
     subnetsIds=[mapping_AZ_subnetid[AZ] for AZ in set(Availabilityzons_Cluster1).union(Availabilityzons_Cluster2)]
     #Create Load balancer 
     load_balancerarn=create_load_balancer(elbv2_serviceclient,'OurLoadBalancer',subnetsIds,security_group_id)
-    print('\nLoad balancer created')
+    print('Load balancer created')
 
     #Create listeners listener
     listener_group1=create_listener(elbv2_serviceclient,load_balancerarn,target_group_1,80) 
     listener_group2=create_listener(elbv2_serviceclient,load_balancerarn,target_group_2,8080)
-    print('\nListeners created')
+    print('Listeners created')
 
     #Create listeners rules
     rule_list_1=create_listener_rule(elbv2_serviceclient,listener_group1,target_group_1,'/cluster1')
     rule_list_2=create_listener_rule(elbv2_serviceclient,listener_group2,target_group_2,'/cluster2')
-    print('\nListners rules created')
+    print('Listners rules created')
 
     """
     #Terminate EC2 instances when not needed
     total_instances=instances_t2+instances_m4
     terminate_instances(ec2_serviceresource,total_instances)
+    time.sleep(20)
     delete_load_balancer(elbv2_serviceclient,load_balancerarn)
+        time.sleep(20)
+
     delete_target_groups(elbv2_serviceclient,[target_group_1,target_group_2])  
  
     """
