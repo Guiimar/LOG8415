@@ -14,6 +14,7 @@
 import configparser
 import boto3
 import time
+from delete_process import * 
 
 #Function to create a service resource for ec2: 
 def resource_ec2(aws_access_key_id, aws_secret_access_key, aws_session_token):
@@ -188,27 +189,6 @@ def create_listener_rule(elbv2_seviceclient,listener_arn, target_group_arn, path
     response_rule_listener = response['Rules'][0]['RuleArn']
     return response_rule_listener
 
-#------------------------------------Functions for EC2s instances termination and Load balancer and target groups deletion ----------------------------------------------------
-#Function to terminate EC2 instances when not needed
-def terminate_instances(ec2_serviceresource,instances_ids):
-    for id in instances_ids:
-        ec2_serviceresource.Instance(id).terminate()
-    return("Instances terminated")
-
-#Function to delete LoadBalancer when not needed
-def delete_load_balancer(elbv2_seviceclient,load_balancer_arn):
-    elbv2_seviceclient.delete_load_balancer(
-        LoadBalancerArn=load_balancer_arn
-    )
-    return("Load Balancer deleted")
-
-#Function to delete target groups when not needed
-def delete_target_groups(elbv2_seviceclient,target_groups_arns):
-    for arn in target_groups_arns:
-        elbv2_seviceclient.delete_target_group(
-        TargetGroupArn=arn
-    )
-    return("Target Groups deleted")
 
 
 # Here is the main program :
@@ -350,6 +330,7 @@ if __name__ == '__main__':
     mapping_AZ_subnetid={subnet['AvailabilityZone']:subnet['SubnetId'] for subnet in subnets_discription['Subnets']}
     mapping_AZ_subnetid
 
+
 #--------------------------------------Create Load balancer with appropriate subnets ----------------------------------------------
 
     #Define appropriate subnets associated with used availabilty zones
@@ -359,23 +340,34 @@ if __name__ == '__main__':
     print('Load balancer created')
 
     #Create listeners listener
+    listeners=[]
     listener_group1=create_listener(elbv2_serviceclient,load_balancerarn,target_group_1,80) 
     listener_group2=create_listener(elbv2_serviceclient,load_balancerarn,target_group_2,8080)
+    listeners.append(listener_group1)
+    listeners.append(listener_group2)
     print('Listeners created')
 
     #Create listeners rules
+    rules=[]
+
     rule_list_1=create_listener_rule(elbv2_serviceclient,listener_group1,target_group_1,'/cluster1')
     rule_list_2=create_listener_rule(elbv2_serviceclient,listener_group2,target_group_2,'/cluster2')
+    
+    rules.append(rule_list_1)
+    rules.append(rule_list_2)
+
     print('Listners rules created')
 
-    """
+    
     #Terminate EC2 instances when not needed
     total_instances=instances_t2+instances_m4
     terminate_instances(ec2_serviceresource,total_instances)
+    print('Instances terminated')
     time.sleep(20)
-    delete_load_balancer(elbv2_serviceclient,load_balancerarn)
-        time.sleep(20)
-
-    delete_target_groups(elbv2_serviceclient,[target_group_1,target_group_2])  
+    delete_load_balancer(elbv2_serviceclient,load_balancerarn,listeners,rules)
+    print('load balancer terminated')
+    time.sleep(20)
+    
+    delete_target_groups(elbv2_serviceclient,[target_group_1,target_group_2]) 
+    print('deleted target groups') 
  
-    """
