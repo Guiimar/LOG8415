@@ -29,7 +29,6 @@ if __name__ == '__main__':
         session_token = config_object.get("resource","aws_session_token")
         ami_id = config_object.get("ami","ami_id")
 
-    key_pair_name = "vockey"
         
     """
     key_id="ASIA37YNGERBT6X6LQTC"
@@ -47,6 +46,10 @@ if __name__ == '__main__':
     #Create elbv2 service client with our credentials:
     elbv2_serviceclient = client_elbv2(key_id, access_key, session_token)
     print("============> elbv2 client creation has been made succesfuly!!!!<=================")
+
+    #--------------------------------------Creating a keypair, or check if it already exists-----------------------------------
+    
+    key_pair_name = create_keypair('lab1_keypair', ec2_serviceclient)
 
     #---------------------------------------------------Get default VPC ID----------------------------------------------------
     #Get default vpc description : 
