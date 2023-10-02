@@ -37,6 +37,20 @@ def client_elbv2(aws_access_key_id, aws_secret_access_key, aws_session_token):
     
     return(elbv2_serviceclient)
 
+#Function to create and check a KeyPair : 
+def create_keypair(key_pair_name, client):
+    try:
+        keypair = client.create_key_pair(KeyName=key_pair_name)
+        print(keypair['KeyMaterial'])
+        with open('lab1_keypair.pem', 'w') as f:
+            f.write(keypair['KeyMaterial'])
+
+        return(key_pair_name)
+
+    except:
+        print("\n\n============> Warning :  Keypair already created !!!!!!!<==================\n\n")
+        return(key_pair_name)
+
 
 #---------------------------------------------To re check----------------------------------------------
 'Function to create a new vpc (Maybe no need for this, just use default vpc)'
