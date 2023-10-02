@@ -14,7 +14,9 @@
 import configparser
 import boto3
 import time
-from delete_process import * 
+from send_requests import * 
+import requests
+from threading import Thread
 
 #Function to create a service resource for ec2: 
 def resource_ec2(aws_access_key_id, aws_secret_access_key, aws_session_token):
@@ -46,8 +48,6 @@ def client_elbv2(aws_access_key_id, aws_secret_access_key, aws_session_token):
                        aws_access_key_id= aws_access_key_id,
                        aws_secret_access_key=aws_secret_access_key ,
                       aws_session_token= aws_session_token) 
-    
-
     
     return(elbv2_serviceclient)
 
@@ -114,13 +114,21 @@ def create_instance_ec2(num_instances,ami_id,
     return instances
 
 #Function to create target groups : 
-def create_target_group(targetname,vpc_id,port, elbv2_serviceclient):
+def create_target_group(targetname,vpc_id,port, elbv2_serviceclient,path):
     tg_response=elbv2_serviceclient.create_target_group(
         Name=targetname,
         Protocol='HTTP',
         Port=port,
         VpcId=vpc_id,
-        TargetType ='instance'
+        TargetType ='instance',
+        HealthCheckProtocol='HTTP',  # Use the appropriate protocol: HTTP, HTTPS, TCP, TLS, UDP, TCP_UDP, GENEVE
+        HealthCheckPort='80',    # Specify the port to use for health checks
+        HealthCheckEnabled= True,     # Enable or disable health checks (True or False)
+        HealthCheckPath = path,    # Specify the path that the health checker will use for HTTP/HTTPS health checks
+        HealthCheckIntervalSeconds= 30,  # Set the interval (in seconds) between health checks
+        HealthCheckTimeoutSeconds= 10,   # Set the maximum amount of time (in seconds) to wait for a health check response
+        HealthyThresholdCount= 10,    # Number of consecutive successful health checks to consider an instance healthy
+        UnhealthyThresholdCount=10,
     )
     target_group_arn = tg_response["TargetGroups"][0]["TargetGroupArn"]    
     return target_group_arn
@@ -167,10 +175,10 @@ def create_listener(elbv2_seviceclient,load_balancer_arn,target_group_arn,port):
     return response_listener_arn
 
 #Function to create listener rules
-def create_listener_rule(elbv2_seviceclient,listener_arn, target_group_arn, path):
+def create_listener_rule(elbv2_seviceclient,listener_arn, target_group_arn, path,prio):
     response = elbv2_seviceclient.create_rule(
         ListenerArn=listener_arn,
-        Priority=1,
+        Priority=prio,
         Conditions=[
             {
                 'Field': 'path-pattern',
@@ -298,21 +306,22 @@ if __name__ == '__main__':
     #print(instances_m4)
     print("\n Instances created succefuly instance type  : m4.large")
 
+    time.sleep(60)
 #--------------------------------------------Create Target groups ----------------------------------------------------------------
 
     #Create the two targets groups (Clusters)
-    target_group_1=create_target_group('TargetGroup1',vpc_id,80, elbv2_serviceclient)
-    target_group_2=create_target_group('TargetGroup2',vpc_id,8080, elbv2_serviceclient)
+    target_group_1=create_target_group('TargetGroup1',vpc_id,80, elbv2_serviceclient,'/cluster1')
+    target_group_2=create_target_group('TargetGroup2',vpc_id,80, elbv2_serviceclient,'/cluster2')
     print("\nTarget groups created")
 
     #time to wait for udate ec2 running status before registration in target groups
-    time.sleep(60)
+    time.sleep(100)
 
 #---------------------------------------------Register Targets on target groups --------------------------------------------------
 
     #Targets registration on target groups
     register_targets(elbv2_serviceclient,instances_t2,target_group_1,80) 
-    register_targets(elbv2_serviceclient,instances_m4,target_group_2,8080)
+    register_targets(elbv2_serviceclient,instances_m4,target_group_2,80)
     print("Targets registred")
 
 #----------------------------Get mapping between availability zones and Ids of default vpc subnets -------------------------------
@@ -342,32 +351,45 @@ if __name__ == '__main__':
     #Create listeners listener
     listeners=[]
     listener_group1=create_listener(elbv2_serviceclient,load_balancerarn,target_group_1,80) 
-    listener_group2=create_listener(elbv2_serviceclient,load_balancerarn,target_group_2,8080)
+    #listener_group2=create_listener(elbv2_serviceclient,load_balancerarn,target_group_2,8080)
     listeners.append(listener_group1)
-    listeners.append(listener_group2)
+    #listeners.append(listener_group2)
     print('Listeners created')
 
     #Create listeners rules
     rules=[]
 
-    rule_list_1=create_listener_rule(elbv2_serviceclient,listener_group1,target_group_1,'/cluster1')
-    rule_list_2=create_listener_rule(elbv2_serviceclient,listener_group2,target_group_2,'/cluster2')
+    rule_list_1=create_listener_rule(elbv2_serviceclient,listener_group1,target_group_1,'/cluster1',1)
+    rule_list_2=create_listener_rule(elbv2_serviceclient,listener_group1,target_group_2,'/cluster2',2)
     
     rules.append(rule_list_1)
     rules.append(rule_list_2)
 
-    print('Listners rules created')
+    print('Listeners rules created')
 
     
     #Terminate EC2 instances when not needed
-    total_instances=instances_t2+instances_m4
-    terminate_instances(ec2_serviceresource,total_instances)
+    #total_instances=instances_t2+instances_m4
+    #terminate_instances(ec2_serviceresource,total_instances)
     print('Instances terminated')
-    time.sleep(20)
-    delete_load_balancer(elbv2_serviceclient,load_balancerarn,listeners,rules)
+    #time.sleep(20)
+    #delete_load_balancer(elbv2_serviceclient,load_balancerarn,listeners,rules)
     print('load balancer terminated')
-    time.sleep(20)
+    #time.sleep(20)
     
-    delete_target_groups(elbv2_serviceclient,[target_group_1,target_group_2]) 
+    #delete_target_groups(elbv2_serviceclient,[target_group_1,target_group_2]) 
     print('deleted target groups') 
+
+    url = elbv2_serviceclient.describe_load_balancers()['LoadBalancers'][0]['DNSName']
+
+    first_sending_thread=Thread(target=first_thread,args=(url,'cluster1'))
+    second_sending_thread=Thread(target=second_thread,args=(url,'cluster2'))
+
+    first_sending_thread.start()
+    second_sending_thread.start()
+
+    first_sending_thread.join()
+    second_sending_thread.join()
+
+    print('script terminated')
  
