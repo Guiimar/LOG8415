@@ -27,21 +27,22 @@ pip install ec2_metadata
 #Create of a simple Flask app:
 
 cat <<EOL > flask_app.py
+from ec2_metadata import ec2_metadata
 from flask import Flask
 
 app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "\n\nThe root of the Flask Web application in the instance : ")
+    return "\n\nThe root of the Flask Web application in the instance : "+ str(ec2_metadata.instance_id+"\n")
 
 @app.route('/cluster1')
 def cluster_1():
-    return("Instance id: is responding from cluster 1!\n")
+    return("Instance id: "+ str(ec2_metadata.instance_id)+" is responding from cluster 1!\n")
 
 @app.route('/cluster2')
 def cluster_2():
-    return("Instance id: is responding from cluster 1!\n")
+    return("Instance id: "+ str(ec2_metadata.instance_id)+" is responding from cluster 1!\n")
 
 EOL
 
