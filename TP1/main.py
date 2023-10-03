@@ -14,8 +14,11 @@
 import configparser
 import boto3
 import time
+from datetime import datetime
 from creationModule import *
+from send_requests import *
 from delete_process import * 
+from metrics_visualization import *
 
 # Here is the main program :
 
@@ -36,6 +39,8 @@ if __name__ == '__main__':
     session_token="FwoGZXIvYXdzEKr//////////wEaDBO5ze9K0vRG+ashZCLOAU0/95fFC+tjNFPeM7QOEnhtztXUO0eZZytXAEulebfcWHep2MZKlMhgjsqtOGxS1hZ7HfvoXW9bsTwMVnT3DBavYP6PPINFXQjexeEegaalIRXaKKwufyF6feVMVH6XkXRxqY6E1Tc7/yJwaO3nR5hqjVj+SRgqjY7K8pzA7/gaxopW6nt8Xu/M5XlRq951SIlps2YKxyesvYsEud0uGlDztap7uyR7kEbDdUJwDYVShJuRnRgYR45n7K3C25xGQZdRhHrgjXZ234BewLBQKI+40agGMi1+WsdAzD767xhcOfSXY6FCqB7ZGdHFdVEMq6ASBqlAc+Zp7dtDqBqwT2PYHko="
     ami_id ='ami-03a6eaae9938c858c'
     """
+#1============================>SETUP
+
     #--------------------------------------Creating ec2 and elbv2 resource and client services--------------------------------
     #Create ec2 service resource with our credentials:
     ec2_serviceresource = resource_ec2(key_id, access_key, session_token)
@@ -64,7 +69,7 @@ if __name__ == '__main__':
     # Get default vpc id : 
     vpc_id = default_vpc_desc[0].get('VpcId')
 
-#-----------------------------------------------------------To re check-------------------------------------------------------
+    #-----------------------------------------------------------To re check-------------------------------------------------------
 
     # The step is to perform later on :
     """
@@ -80,9 +85,9 @@ if __name__ == '__main__':
     security_group_id = create_security_group('Security_group_created_for_lab','Security_group',vpc_id,ec2)
     print("\n"+security_group_id+"\n")"""
 
-#--------------------------------------------------------------End--------------------------------------------------------------
+    #--------------------------------------------------------------End--------------------------------------------------------------
 
-#--------------------------------------Get Id of default VPC standard security group -------------------------------------------
+    #--------------------------------------Get Id of default VPC standard security group -------------------------------------------
 
     #Get the standard security group from the default VPC :
     sg_dict = ec2_serviceclient.describe_security_groups(Filters=[
@@ -105,7 +110,7 @@ if __name__ == '__main__':
     security_group_id = (sg_dict.get("SecurityGroups")[0]).get("GroupId")    
     
 
-#--------------------------------------Create Instances of cluster 1 ------------------------------------------------------------
+    #--------------------------------------Create Instances of cluster 1 ------------------------------------------------------------
 
     # Create 4 instances with t2.large as intance type,
     'By choice, we create the 4 EC2 instances for Cluster 1 in availability zones us-east-1a and us-east-1b'
@@ -116,7 +121,7 @@ if __name__ == '__main__':
     #print(instances_t2)
     print("\n Instances created succefuly instance type : t2.large")
 
-#--------------------------------------Create Instances of cluster 2 -------------------------------------------------------------
+    #--------------------------------------Create Instances of cluster 2 -------------------------------------------------------------
 
     # Create 5 instances with m4.large as instance type:
     'By choice, we create the 5 EC2 instances for Cluster 2 in avaibility zones us-east-1c and us-east-1d'
@@ -127,7 +132,7 @@ if __name__ == '__main__':
     #print(instances_m4)
     print("\n Instances created succefuly instance type  : m4.large")
 
-#--------------------------------------------Create Target groups ----------------------------------------------------------------
+    #--------------------------------------------Create Target groups ----------------------------------------------------------------
 
     #Create the two targets groups (Clusters)
     target_group_1=create_target_group('TargetGroup1',vpc_id,80, elbv2_serviceclient)
@@ -137,14 +142,14 @@ if __name__ == '__main__':
     #time to wait for udate ec2 running status before registration in target groups
     time.sleep(60)
 
-#---------------------------------------------Register Targets on target groups --------------------------------------------------
+    #---------------------------------------------Register Targets on target groups --------------------------------------------------
 
     #Targets registration on target groups
     register_targets(elbv2_serviceclient,instances_t2,target_group_1,80) 
     register_targets(elbv2_serviceclient,instances_m4,target_group_2,8080)
     print("Targets registred")
 
-#----------------------------Get mapping between availability zones and Ids of default vpc subnets -------------------------------
+    #----------------------------Get mapping between availability zones and Ids of default vpc subnets -------------------------------
 
     #Get the standard subnets discription from the default VPC :
     subnets_discription= ec2_serviceclient.describe_subnets(Filters=[
@@ -160,7 +165,7 @@ if __name__ == '__main__':
     mapping_AZ_subnetid
 
 
-#--------------------------------------Create Load balancer with appropriate subnets ----------------------------------------------
+    #--------------------------------------Create Load balancer with appropriate subnets ----------------------------------------------
 
     #Define appropriate subnets associated with used availabilty zones
     subnetsIds=[mapping_AZ_subnetid[AZ] for AZ in set(Availabilityzons_Cluster1).union(Availabilityzons_Cluster2)]
@@ -187,7 +192,36 @@ if __name__ == '__main__':
 
     print('Listners rules created')
 
+#2============================>Benchemarking
+
+    #------------------------------------------Sending requests -----------------------------------------------------------------------
+    url = elbv2_serviceclient.describe_load_balancers()['LoadBalancers'][0]['DNSName']
     
+    StartDate=datetime.utcnow()
+
+    for path in ['cluster1','cluster2']:
+
+        first_sending_thread=Thread(target=first_thread,args=(url,path))
+        second_sending_thread=Thread(target=second_thread,args=(url,path))
+        
+        first_sending_thread.start()
+        second_sending_thread.start()
+        
+        first_sending_thread.join()
+        second_sending_thread.join()
+    
+    EndDate=datetime.utcnow()
+
+    print('script terminated')
+    #---------------------------------------------Plot metrics -----------------------------------------------------------------------
+    
+
+
+
+
+
+#3============================>Termination and deletion
+
     #Terminate EC2 instances when not needed
     total_instances=instances_t2+instances_m4
     terminate_instances(ec2_serviceresource,total_instances)
