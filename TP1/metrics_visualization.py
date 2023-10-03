@@ -72,26 +72,26 @@ def plot_metric_per_cluster(values_timestamp_dict,MetricName,path):
    plt.savefig(path+str(MetricName)+'_per_cluster_of_'+str(LoadBalancerName)+'.png')
 
 
-#Function to get a dictionary of timestamps List and Cloudwatch metric List of an ALB in a specific time interval: 
-def get_metric_load_balancer(Cloudwatch_client,Id,MetricName,LoadBalancer_Name,Start_Time, End_Time,Period,Stat):
-   LB_Metrics={}
-   LB_cloudwatch=Cloudwatch_client.get_metric_data(
+#Function to get average of CPU utilzation of instances per cluster: 
+def get_average_Instances_metrics_per_cluster(Cloudwatch_client,Id,MetricName,TargetGroup_name,Instances_Ids,Start_Time, End_Time,Period,Stat):
+   EC2_Metrics={}
+   for EC2_Id in Instances_Ids:
+      EC2_Cloudwatch=Cloudwatch_client.get_metric_data(
         MetricDataQueries=[
             {
                 'Id':Id,
                 'MetricStat':{
                     'Metric':{
-                        'Namespace': 'AWS/ApplicationELB',
+                        'Namespace': 'AWS/EC2',
                         'MetricName':MetricName,
-                        'Dimensions':[
-                            {'Name':'LoadBalancer',
-                                'Value': LoadBalancer_Name
+                        'Dimensions':[{'Name':'InstanceId',
+                                'Value': EC2_Id
                                 
                             }
                         ]
                     },
                  'Stat':Stat,
-                 'Label': str(MetricName+' metric for '+LoadBalancer_Name),
+                 'Label': str(MetricName+' metric for '+TargetGroup_name),
                  'Period':Period,
                  'ReturnData':True
 
@@ -100,37 +100,32 @@ def get_metric_load_balancer(Cloudwatch_client,Id,MetricName,LoadBalancer_Name,S
         ],
         StartTime=Start_Time,
         EndTime=End_Time
-    )
-   metric_list=LB_cloudwatch['MetricDataResults'][0]['Values']
-   time_stamps=LB_cloudwatch['MetricDataResults'][0]['Timestamps']
-   LB_Metrics[str(LoadBalancer_Name)]=metric_list
-   LB_Metrics['timestamps']=time_stamps
+        )
+      EC2_Metrics[EC2_Id]=EC2_Cloudwatch['MetricDataResults'][0]['Values']
+   
+   Average_metric=[sum(i)/len(i) for i in zip(*EC2_Metrics.values())]
+   time_stamps=EC2_Cloudwatch['MetricDataResults'][0]['Timestamps']
+   
+   EC2_Metrics[str(MetricName)]=Average_metric
+   EC2_Metrics['timestamps']=time_stamps
 
-   return LB_Metrics
+   return EC2_Metrics
    
 
 #Function to plot metric values of an ALB and save the graph in a path
-def plot_metric_load_balancer(values_timestamp_dict,MetricName,path):
+def plot_average_Instances_metrics_per_cluster(values_timestamp_TG1,values_timestamp_TG2,MetricName,path):
    
-   time=values_timestamp_dict['timestamps']
-   del values_timestamp_dict['timestamps']
-   LoadBalancerName=list(values_timestamp_dict.keys())[0]
-   metric=list(values_timestamp_dict.values())[0]
+   time=values_timestamp_TG1['timestamps']
+   Average_metric_TG1=values_timestamp_TG1[str(MetricName)]
+   Average_metric_TG2=values_timestamp_TG2[str(MetricName)]
    plt.figure()
-   plt.plot(time,metric,label=str(LoadBalancerName))
+   plt.plot(time,Average_metric_TG1,label='Cluster1')
+   plt.plot(time,Average_metric_TG2,label='Cluster2')
    plt.xlabel('Time')
-   plt.ylabel(str(MetricName))
-   plt.title(str(MetricName)+' of '+str(LoadBalancerName))
+   plt.ylabel(str(MetricName)+' Average per Cluster')
+   plt.title('EC2 Instances '+str(MetricName)+' average per Cluster')
    plt.legend()
    plt.tight_layout()
-   plt.savefig(path+str(MetricName)+'_of_'+str(LoadBalancerName)+'.png')
+   plt.savefig(path+'EC2_Instances_'+str(MetricName)+'_average_per_Cluster'+'.png')
 
-#Just test
-dict1={'timestamps': [1,2,3,4],'ALB/Cluster1': [5,4,6,8],'ALB/Cluster2': [-5,-4,-6,-8]}
-MetricName='Test'
-path='Visualizations\\'
-#plot_metric_per_cluster(dict1,MetricName,path)
 
-dict2={'timestamps': [1,2,3,4],'ALB': [5,4,6,8]}
-
-plot_metric_load_balancer(dict2,MetricName,path)
