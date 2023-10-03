@@ -7,4 +7,4 @@ def my_app():
     return 'Cluster 1 Instance 1 responding'
 
 if __name__=='__main__':
-    app.run()
+    app.run("0.0.0.0:8000")
