@@ -14,190 +14,8 @@
 import configparser
 import boto3
 import time
-from send_requests import * 
-import requests
-from threading import Thread
-
-#Function to create a service resource for ec2: 
-def resource_ec2(aws_access_key_id, aws_secret_access_key, aws_session_token):
-    ec2_serviceresource =  boto3.resource('ec2',
-                       'us-east-1',
-                       aws_access_key_id= aws_access_key_id,
-                       aws_secret_access_key=aws_secret_access_key ,
-                      aws_session_token= aws_session_token) 
-    
-
-    
-    return(ec2_serviceresource)
-
-#Function to create a service client for ec2
-def client_ec2(aws_access_key_id, aws_secret_access_key, aws_session_token):
-    ec2_serviceclient =  boto3.client('ec2',
-                       'us-east-1',
-                       aws_access_key_id= aws_access_key_id,
-                       aws_secret_access_key=aws_secret_access_key ,
-                      aws_session_token= aws_session_token) 
-   
-    
-    return(ec2_serviceclient)
-
-#Function to create a service client for elbv2
-def client_elbv2(aws_access_key_id, aws_secret_access_key, aws_session_token):
-    elbv2_serviceclient =  boto3.client('elbv2',
-                       'us-east-1',
-                       aws_access_key_id= aws_access_key_id,
-                       aws_secret_access_key=aws_secret_access_key ,
-                      aws_session_token= aws_session_token) 
-    
-    return(elbv2_serviceclient)
-
-
-#---------------------------------------------To re check----------------------------------------------
-'Function to create a new vpc (Maybe no need for this, just use default vpc)'
-def create_vpc(CidrBlock,resource):
-   VPC_Id=resource.create_vpc(CidrBlock=CidrBlock).id
-   return VPC_Id
-
-'Function to create security group (Maybe no need for this, just use get securty group of default vpc)'
-def create_security_group(Description,Groupe_name,vpc_id,resource):
-
-    Security_group_ID=resource.create_security_group(
-        Description=Description,
-        GroupName=Groupe_name,
-        VpcId=vpc_id).id
-    
-    Security_group=resource.SecurityGroup(Security_group_ID)
-    
-    #Add an inbounded allowing inbounded traffics of all protocols, from and to all ports, and all Ipranges.  
-    Security_group.authorize_ingress(
-         IpPermissions=[
-            {'FromPort':-1,
-             'ToPort':-1,
-             'IpProtocol':'-1',
-             'IpRanges':[{'CidrIp':'0.0.0.0/0'}]
-            }]
-    )       
-    return Security_group_ID
-
-#------------------------------------------------End----------------------------------------------------
-
-
-#Function to create ec2 instances : 
-def create_instance_ec2(num_instances,ami_id,
-    instance_type,key_pair_name,ec2_serviceresource,security_group_id,Availabilityzons):
-    instances=[]
-    for i in range(num_instances):
-        instance=ec2_serviceresource.create_instances(
-            ImageId=ami_id,
-            InstanceType=instance_type,
-            KeyName=key_pair_name,
-            MinCount=1,
-            MaxCount=1,
-            Placement={'AvailabilityZone':Availabilityzons[i]},
-            SecurityGroupIds=[security_group_id] if security_group_id else [],
-            TagSpecifications=[
-                    {
-                        'ResourceType': 'instance',
-                        'Tags': [
-                            {
-                                'Key': 'Name',
-                                'Value': 'lab1-ec2-instance-'+str(instance_type)+ str(i + 1)
-                            },
-                        ]
-                    },
-                ]
-        )
-        instances.append(instance[0].id)
-        print ('Instance: ',i+1,' having the Id: ',instance[0], ' in Availability Zone: ', Availabilityzons[i], 'is created')
-        #print(f'{instances[i]} is starting')
-   
-    return instances
-
-#Function to create target groups : 
-def create_target_group(targetname,vpc_id,port, elbv2_serviceclient,path):
-    tg_response=elbv2_serviceclient.create_target_group(
-        Name=targetname,
-        Protocol='HTTP',
-        Port=port,
-        VpcId=vpc_id,
-        TargetType ='instance',
-        HealthCheckProtocol='HTTP',  # Use the appropriate protocol: HTTP, HTTPS, TCP, TLS, UDP, TCP_UDP, GENEVE
-        HealthCheckPort='80',    # Specify the port to use for health checks
-        HealthCheckEnabled= True,     # Enable or disable health checks (True or False)
-        HealthCheckPath = path,    # Specify the path that the health checker will use for HTTP/HTTPS health checks
-        HealthCheckIntervalSeconds= 30,  # Set the interval (in seconds) between health checks
-        HealthCheckTimeoutSeconds= 10,   # Set the maximum amount of time (in seconds) to wait for a health check response
-        HealthyThresholdCount= 10,    # Number of consecutive successful health checks to consider an instance healthy
-        UnhealthyThresholdCount=10,
-    )
-    target_group_arn = tg_response["TargetGroups"][0]["TargetGroupArn"]    
-    return target_group_arn
-
-#Function to register targets in target groups : 
-def register_targets(elbv2_serviceclient,instances_ids,target_group_arn,port):
-    targets=[]
-    for instance_id in instances_ids:
-        targets.append({"Id":instance_id,"Port":port})
-
-    tg_registered=elbv2_serviceclient.register_targets(
-        TargetGroupArn=target_group_arn,
-        Targets=targets
-    )
-    return tg_registered
-
-#Function to create load balancer : 
-def create_load_balancer(elbv2_seviceclient,LB_name,subnets,security_group):
-    response = elbv2_seviceclient.create_load_balancer(
-        Name=LB_name,
-        Subnets=subnets,
-        SecurityGroups=[security_group]
-                )
-    load_balancer_arn = response["LoadBalancers"][0]["LoadBalancerArn"]
-  
-
-    return load_balancer_arn
-
-#Function to create listeners:
-def create_listener(elbv2_seviceclient,load_balancer_arn,target_group_arn,port):
-    response_listener=elbv2_seviceclient.create_listener(
-    LoadBalancerArn=load_balancer_arn,
-    Port=port,
-    Protocol='HTTP',
-    DefaultActions=[
-        {
-            'TargetGroupArn': target_group_arn,
-            'Type':'forward'
-        },
-    ]
-    )
-    response_listener_arn=response_listener["Listeners"][0]["ListenerArn"]
-   
-    return response_listener_arn
-
-#Function to create listener rules
-def create_listener_rule(elbv2_seviceclient,listener_arn, target_group_arn, path,prio):
-    response = elbv2_seviceclient.create_rule(
-        ListenerArn=listener_arn,
-        Priority=prio,
-        Conditions=[
-            {
-                'Field': 'path-pattern',
-                'Values': [path]
-            }
-        ],
-        Actions=[
-            {
-                'Type': 'forward',
-                'ForwardConfig': {
-                    'TargetGroups': [{'TargetGroupArn': target_group_arn}]
-                }
-            }
-        ]
-    )
-    response_rule_listener = response['Rules'][0]['RuleArn']
-    return response_rule_listener
-
-
+from creationModule import *
+from delete_process import * 
 
 # Here is the main program :
 
@@ -211,7 +29,6 @@ if __name__ == '__main__':
         session_token = config_object.get("resource","aws_session_token")
         ami_id = config_object.get("ami","ami_id")
 
-    key_pair_name = "vockey"
         
     """
     key_id="ASIA37YNGERBT6X6LQTC"
@@ -229,6 +46,10 @@ if __name__ == '__main__':
     #Create elbv2 service client with our credentials:
     elbv2_serviceclient = client_elbv2(key_id, access_key, session_token)
     print("============> elbv2 client creation has been made succesfuly!!!!<=================")
+
+    #--------------------------------------Creating a keypair, or check if it already exists-----------------------------------
+    
+    key_pair_name = create_keypair('lab1_keypair', ec2_serviceclient)
 
     #---------------------------------------------------Get default VPC ID----------------------------------------------------
     #Get default vpc description : 
@@ -306,22 +127,21 @@ if __name__ == '__main__':
     #print(instances_m4)
     print("\n Instances created succefuly instance type  : m4.large")
 
-    time.sleep(60)
 #--------------------------------------------Create Target groups ----------------------------------------------------------------
 
     #Create the two targets groups (Clusters)
-    target_group_1=create_target_group('TargetGroup1',vpc_id,80, elbv2_serviceclient,'/cluster1')
-    target_group_2=create_target_group('TargetGroup2',vpc_id,80, elbv2_serviceclient,'/cluster2')
+    target_group_1=create_target_group('TargetGroup1',vpc_id,80, elbv2_serviceclient)
+    target_group_2=create_target_group('TargetGroup2',vpc_id,8080, elbv2_serviceclient)
     print("\nTarget groups created")
 
     #time to wait for udate ec2 running status before registration in target groups
-    time.sleep(100)
+    time.sleep(60)
 
 #---------------------------------------------Register Targets on target groups --------------------------------------------------
 
     #Targets registration on target groups
     register_targets(elbv2_serviceclient,instances_t2,target_group_1,80) 
-    register_targets(elbv2_serviceclient,instances_m4,target_group_2,80)
+    register_targets(elbv2_serviceclient,instances_m4,target_group_2,8080)
     print("Targets registred")
 
 #----------------------------Get mapping between availability zones and Ids of default vpc subnets -------------------------------
@@ -351,45 +171,31 @@ if __name__ == '__main__':
     #Create listeners listener
     listeners=[]
     listener_group1=create_listener(elbv2_serviceclient,load_balancerarn,target_group_1,80) 
-    #listener_group2=create_listener(elbv2_serviceclient,load_balancerarn,target_group_2,8080)
+    listener_group2=create_listener(elbv2_serviceclient,load_balancerarn,target_group_2,8080)
     listeners.append(listener_group1)
-    #listeners.append(listener_group2)
+    listeners.append(listener_group2)
     print('Listeners created')
 
     #Create listeners rules
     rules=[]
 
-    rule_list_1=create_listener_rule(elbv2_serviceclient,listener_group1,target_group_1,'/cluster1',1)
-    rule_list_2=create_listener_rule(elbv2_serviceclient,listener_group1,target_group_2,'/cluster2',2)
+    rule_list_1=create_listener_rule(elbv2_serviceclient,listener_group1,target_group_1,'/cluster1')
+    rule_list_2=create_listener_rule(elbv2_serviceclient,listener_group2,target_group_2,'/cluster2')
     
     rules.append(rule_list_1)
     rules.append(rule_list_2)
 
-    print('Listeners rules created')
+    print('Listners rules created')
 
     
     #Terminate EC2 instances when not needed
-    #total_instances=instances_t2+instances_m4
-    #terminate_instances(ec2_serviceresource,total_instances)
+    total_instances=instances_t2+instances_m4
+    terminate_instances(ec2_serviceresource,total_instances)
     print('Instances terminated')
-    #time.sleep(20)
-    #delete_load_balancer(elbv2_serviceclient,load_balancerarn,listeners,rules)
+    time.sleep(20)
+    delete_load_balancer(elbv2_serviceclient,load_balancerarn,listeners,rules)
     print('load balancer terminated')
-    #time.sleep(20)
+    time.sleep(20)
     
-    #delete_target_groups(elbv2_serviceclient,[target_group_1,target_group_2]) 
+    delete_target_groups(elbv2_serviceclient,[target_group_1,target_group_2]) 
     print('deleted target groups') 
-
-    url = elbv2_serviceclient.describe_load_balancers()['LoadBalancers'][0]['DNSName']
-
-    first_sending_thread=Thread(target=first_thread,args=(url,'cluster1'))
-    second_sending_thread=Thread(target=second_thread,args=(url,'cluster2'))
-
-    first_sending_thread.start()
-    second_sending_thread.start()
-
-    first_sending_thread.join()
-    second_sending_thread.join()
-
-    print('script terminated')
- 
