@@ -184,28 +184,28 @@ if __name__ == '__main__':
     #Define appropriate subnets associated with used availabilty zones
     subnetsIds=[mapping_AZ_subnetid[AZ] for AZ in set(Availabilityzons_Cluster1).union(Availabilityzons_Cluster2)]
     #Create Load balancer 
-    LoadBalancerName='Our_ALB'
+    LoadBalancerName='OurALB'
     load_balancerarn=create_load_balancer(elbv2_serviceclient,LoadBalancerName,subnetsIds,security_group_id)
     print('Load balancer created')
 
     #Create listeners listener
-    listeners=[]
-    listener_group1=create_listener(elbv2_serviceclient,load_balancerarn,target_group_1) 
+    #listeners=[]
+    listener_group=create_listener(elbv2_serviceclient,load_balancerarn) 
     #listener_group2=create_listener(elbv2_serviceclient,load_balancerarn,target_group_2)
-    listeners.append(listener_group1)
+    #listeners.append(listener_group1)
     #listeners.append(listener_group2)
-    print('Listeners created')
+    print('Listener created')
 
     #Create listeners rules
     rules=[]
 
-    rule_list_1=create_listener_rule(elbv2_serviceclient,listener_group1,target_group_1,'/cluster1')
-    rule_list_2=create_listener_rule(elbv2_serviceclient,listener_group1,target_group_2,'/cluster2')
+    rule_list_1=create_listener_rule(elbv2_serviceclient,listener_group,target_group_1,'/cluster1')
+    rule_list_2=create_listener_rule(elbv2_serviceclient,listener_group,target_group_2,'/cluster2')
     
     rules.append(rule_list_1)
     rules.append(rule_list_2)
 
-    print('Listners rules created')
+    print('Listner rules created')
 
 #2============================>Benchemarking
 
