@@ -130,8 +130,8 @@ if __name__ == '__main__':
 #--------------------------------------------Create Target groups ----------------------------------------------------------------
 
     #Create the two targets groups (Clusters)
-    target_group_1=create_target_group('TargetGroup1',vpc_id,80, elbv2_serviceclient)
-    target_group_2=create_target_group('TargetGroup2',vpc_id,8080, elbv2_serviceclient)
+    target_group_1=create_target_group('TargetGroup1',vpc_id,elbv2_serviceclient)
+    target_group_2=create_target_group('TargetGroup2',vpc_id,elbv2_serviceclient)
     print("\nTarget groups created")
 
     #time to wait for udate ec2 running status before registration in target groups
@@ -140,8 +140,8 @@ if __name__ == '__main__':
 #---------------------------------------------Register Targets on target groups --------------------------------------------------
 
     #Targets registration on target groups
-    register_targets(elbv2_serviceclient,instances_t2,target_group_1,80) 
-    register_targets(elbv2_serviceclient,instances_m4,target_group_2,8080)
+    register_targets(elbv2_serviceclient,instances_t2,target_group_1) 
+    register_targets(elbv2_serviceclient,instances_m4,target_group_2)
     print("Targets registred")
 
 #----------------------------Get mapping between availability zones and Ids of default vpc subnets -------------------------------
@@ -170,17 +170,17 @@ if __name__ == '__main__':
 
     #Create listeners listener
     listeners=[]
-    listener_group1=create_listener(elbv2_serviceclient,load_balancerarn,target_group_1,80) 
-    listener_group2=create_listener(elbv2_serviceclient,load_balancerarn,target_group_2,8080)
+    listener_group1=create_listener(elbv2_serviceclient,load_balancerarn,target_group_1) 
+    #listener_group2=create_listener(elbv2_serviceclient,load_balancerarn,target_group_2)
     listeners.append(listener_group1)
-    listeners.append(listener_group2)
+    #listeners.append(listener_group2)
     print('Listeners created')
 
     #Create listeners rules
     rules=[]
 
     rule_list_1=create_listener_rule(elbv2_serviceclient,listener_group1,target_group_1,'/cluster1')
-    rule_list_2=create_listener_rule(elbv2_serviceclient,listener_group2,target_group_2,'/cluster2')
+    rule_list_2=create_listener_rule(elbv2_serviceclient,listener_group1,target_group_2,'/cluster2')
     
     rules.append(rule_list_1)
     rules.append(rule_list_2)
@@ -190,12 +190,12 @@ if __name__ == '__main__':
     
     #Terminate EC2 instances when not needed
     total_instances=instances_t2+instances_m4
-    terminate_instances(ec2_serviceresource,total_instances)
+    #terminate_instances(ec2_serviceresource,total_instances)
     print('Instances terminated')
     time.sleep(20)
-    delete_load_balancer(elbv2_serviceclient,load_balancerarn,listeners,rules)
+    #delete_load_balancer(elbv2_serviceclient,load_balancerarn,listeners,rules)
     print('load balancer terminated')
     time.sleep(20)
     
-    delete_target_groups(elbv2_serviceclient,[target_group_1,target_group_2]) 
+    #delete_target_groups(elbv2_serviceclient,[target_group_1,target_group_2]) 
     print('deleted target groups') 

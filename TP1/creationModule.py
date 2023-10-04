@@ -114,11 +114,11 @@ def create_instance_ec2(num_instances,ami_id,
     return instances
 
 #Function to create target groups : 
-def create_target_group(targetname,vpc_id,port, elbv2_serviceclient):
+def create_target_group(targetname,vpc_id, elbv2_serviceclient):
     tg_response=elbv2_serviceclient.create_target_group(
         Name=targetname,
         Protocol='HTTP',
-        Port=port,
+        Port=80,
         VpcId=vpc_id,
         TargetType ='instance'
     )
@@ -126,10 +126,10 @@ def create_target_group(targetname,vpc_id,port, elbv2_serviceclient):
     return target_group_arn
 
 #Function to register targets in target groups : 
-def register_targets(elbv2_serviceclient,instances_ids,target_group_arn,port):
+def register_targets(elbv2_serviceclient,instances_ids,target_group_arn):
     targets=[]
     for instance_id in instances_ids:
-        targets.append({"Id":instance_id,"Port":port})
+        targets.append({"Id":instance_id,"Port":80})
 
     tg_registered=elbv2_serviceclient.register_targets(
         TargetGroupArn=target_group_arn,
@@ -146,28 +146,21 @@ def create_load_balancer(elbv2_seviceclient,LB_name,subnets,security_group):
                 )
     load_balancer_arn = response["LoadBalancers"][0]["LoadBalancerArn"]
   
-
     return load_balancer_arn
 
 #Function to create listeners:
-def create_listener(elbv2_seviceclient,load_balancer_arn,target_group_arn,port):
+def create_listener(elbv2_seviceclient,load_balancer_arn):
     response_listener=elbv2_seviceclient.create_listener(
     LoadBalancerArn=load_balancer_arn,
-    Port=port,
+    Port=80,
     Protocol='HTTP',
-    DefaultActions=[
-        {
-            'TargetGroupArn': target_group_arn,
-            'Type':'forward'
-        },
-    ]
     )
     response_listener_arn=response_listener["Listeners"][0]["ListenerArn"]
    
     return response_listener_arn
 
 #Function to create listener rules
-def create_listener_rule(elbv2_seviceclient,listener_arn, target_group_arn, path):
+def create_listener_rule(elbv2_seviceclient,listener_arn, target_group_arn, path,prio):
     response = elbv2_seviceclient.create_rule(
         ListenerArn=listener_arn,
         Priority=1,
@@ -188,6 +181,6 @@ def create_listener_rule(elbv2_seviceclient,listener_arn, target_group_arn, path
     )
     response_rule_listener = response['Rules'][0]['RuleArn']
     return response_rule_listener
-
+    
 
 
