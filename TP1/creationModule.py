@@ -108,7 +108,7 @@ def create_instance_ec2(num_instances,ami_id,
                 ]
         )
         instances.append(instance[0].id)
-        print ('Instance: ',i+1,' having the Id: ',instance[0], ' in Availability Zone: ', Availabilityzons[i], 'is created')
+        print ('Instance: ',i+1,' having the Id: ',instance[0].id, ' in Availability Zone: ', Availabilityzons[i], 'is created')
         #print(f'{instances[i]} is starting')
    
     return instances

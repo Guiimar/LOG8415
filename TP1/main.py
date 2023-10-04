@@ -120,7 +120,8 @@ if __name__ == '__main__':
     with open('flask_deployment.sh', 'r') as f :
         flask_script = f.read()
 
-    ud = base64.b64encode(flask_script.encode()).decode()
+    ud = str(flask_script)
+
     #--------------------------------------Create Instances of cluster 1 ------------------------------------------------------------
 
     # Create 4 instances with t2.large as intance type,
