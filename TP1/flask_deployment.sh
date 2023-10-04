@@ -3,7 +3,7 @@
 #Install Python Virtualenv
 
 sudo apt-get -y update
-sudo apt-get install -y python3-venv 
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y python3-venv 
 
 #Create directory
 
@@ -86,7 +86,7 @@ curl localhost:8000
 
 #Install nginx:
 
-sudo apt-get -y install nginx
+sudo DEBIAN_FRONTEND=noninteractive apt-get -y install nginx
 
 #Start the Nginx service :
 

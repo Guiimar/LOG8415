@@ -87,27 +87,30 @@ if __name__ == '__main__':
 
     #--------------------------------------------------------------End--------------------------------------------------------------
 
-    #--------------------------------------Get Id of default VPC standard security group -------------------------------------------
+    #--------------------------------------Try create a security group with all traffic inbouded----------------------------------------
+  
+    try:
+        security_group_id = create_security_group("All traffic sec_group","lab1_security_group",vpc_id,ec2_serviceresource)  
+    except :
+        #Get the standard security group from the default VPC :
+        sg_dict = ec2_serviceclient.describe_security_groups(Filters=[
+            {
+                'Name': 'vpc-id',
+                'Values': [
+                    vpc_id,
+                ]
+            },
 
-    #Get the standard security group from the default VPC :
-    sg_dict = ec2_serviceclient.describe_security_groups(Filters=[
         {
-            'Name': 'vpc-id',
-            'Values': [
-                vpc_id,
-            ]
-        },
+                'Name': 'group-name',
+                'Values': [
+                    "lab1_security_group",
+                ]
+            },
 
-    {
-            'Name': 'group-name',
-            'Values': [
-                "default",
-            ]
-        },
-    
-    ])
+        ])
 
-    security_group_id = (sg_dict.get("SecurityGroups")[0]).get("GroupId")    
+        security_group_id = (sg_dict.get("SecurityGroups")[0]).get("GroupId")
     
 
     #--------------------------------------Create Instances of cluster 1 ------------------------------------------------------------

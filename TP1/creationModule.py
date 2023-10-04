@@ -60,7 +60,6 @@ def create_vpc(CidrBlock,resource):
 
 'Function to create security group (Maybe no need for this, just use get securty group of default vpc)'
 def create_security_group(Description,Groupe_name,vpc_id,resource):
-
     Security_group_ID=resource.create_security_group(
         Description=Description,
         GroupName=Groupe_name,
