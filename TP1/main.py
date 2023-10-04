@@ -184,7 +184,7 @@ if __name__ == '__main__':
     #Define appropriate subnets associated with used availabilty zones
     subnetsIds=[mapping_AZ_subnetid[AZ] for AZ in set(Availabilityzons_Cluster1).union(Availabilityzons_Cluster2)]
     #Create Load balancer 
-    LoadBalancerName='Our_ALB'
+    LoadBalancerName='Our-ALB'
     load_balancerarn=create_load_balancer(elbv2_serviceclient,LoadBalancerName,subnetsIds,security_group_id)
     print('Load balancer created')
 

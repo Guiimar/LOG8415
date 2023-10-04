@@ -149,18 +149,22 @@ def create_load_balancer(elbv2_seviceclient,LB_name,subnets,security_group):
     return load_balancer_arn
 
 #Function to create listeners:
-def create_listener(elbv2_seviceclient,load_balancer_arn):
+def create_listener(elbv2_seviceclient,load_balancer_arn, target_group):
     response_listener=elbv2_seviceclient.create_listener(
     LoadBalancerArn=load_balancer_arn,
     Port=80,
     Protocol='HTTP',
+    DefaultActions=[
+        {
+            'TargetGroupArn' :  target_group
+        }]
     )
     response_listener_arn=response_listener["Listeners"][0]["ListenerArn"]
    
     return response_listener_arn
 
 #Function to create listener rules
-def create_listener_rule(elbv2_seviceclient,listener_arn, target_group_arn, path,prio):
+def create_listener_rule(elbv2_seviceclient,listener_arn, target_group_arn, path):
     response = elbv2_seviceclient.create_rule(
         ListenerArn=listener_arn,
         Priority=1,
