@@ -129,7 +129,7 @@ if __name__ == '__main__':
     Availabilityzons_Cluster1=['us-east-1a','us-east-1b','us-east-1a','us-east-1b','us-east-1a']
     instance_type = "t2.large"
     print("\n Creating instances of Cluster 1 with type : t2.large")
-    instances_t2= create_instance_ec2(1,ami_id, instance_type,key_pair_name,ec2_serviceresource,security_group_id,Availabilityzons_Cluster1,ud)
+    instances_t2= create_instance_ec2(4,ami_id, instance_type,key_pair_name,ec2_serviceresource,security_group_id,Availabilityzons_Cluster1,ud)
     #print(instances_t2)
     print("\n Instances created succefuly instance type : t2.large")
 
@@ -147,9 +147,9 @@ if __name__ == '__main__':
     #--------------------------------------------Create Target groups ----------------------------------------------------------------
 
     #Create the two targets groups (Clusters)
-    TargetGroup1_name='Cluster1_t2.large'
+    TargetGroup1_name='Cluster1-t2-large'
     target_group_1=create_target_group(TargetGroup1_name,vpc_id,80, elbv2_serviceclient)
-    TargetGroup2_name='Cluster2_m4.large'
+    TargetGroup2_name='Cluster2-m4-large'
     target_group_2=create_target_group(TargetGroup2_name,vpc_id,8080, elbv2_serviceclient)
     print("\nTarget groups created")
 
