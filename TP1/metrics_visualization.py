@@ -72,7 +72,7 @@ def plot_metric_per_cluster(values_timestamp_dict,MetricName,path):
    plt.savefig(path+str(MetricName)+'_per_cluster_of_'+str(LoadBalancerName)+'.png')
 
 
-#Function to get average of CPU utilzation of instances per cluster: 
+#Function to get average of a metric of EC2 instances per cluster: 
 def get_average_Instances_metrics_per_cluster(Cloudwatch_client,Id,MetricName,TargetGroup_name,Instances_Ids,Start_Time, End_Time,Period,Stat):
    EC2_Metrics={}
    for EC2_Id in Instances_Ids:
@@ -112,7 +112,7 @@ def get_average_Instances_metrics_per_cluster(Cloudwatch_client,Id,MetricName,Ta
    return EC2_Metrics
    
 
-#Function to plot metric values of an ALB and save the graph in a path
+#Function to get average of a metric of EC2 instances per cluster and save the graph in a path
 def plot_average_Instances_metrics_per_cluster(values_timestamp_TG1,values_timestamp_TG2,MetricName,path):
    
    time=values_timestamp_TG1['timestamps']
