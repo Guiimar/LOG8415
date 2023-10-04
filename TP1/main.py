@@ -19,6 +19,7 @@ from creationModule import *
 from send_requests import *
 from delete_process import * 
 from metrics_visualization import *
+import base64
 
 # Here is the main program :
 
@@ -91,6 +92,7 @@ if __name__ == '__main__':
   
     try:
         security_group_id = create_security_group("All traffic sec_group","lab1_security_group",vpc_id,ec2_serviceresource)  
+    
     except :
         #Get the standard security group from the default VPC :
         sg_dict = ec2_serviceclient.describe_security_groups(Filters=[
@@ -113,6 +115,13 @@ if __name__ == '__main__':
         security_group_id = (sg_dict.get("SecurityGroups")[0]).get("GroupId")
     
 
+    #--------------------------------------Pass the script into the user_data parameter ------------------------------------------------------------
+    
+    with open('flask_deployment.sh', 'r') as f :
+        flask_script = f.read()
+
+    ud = str(flask_script)
+
     #--------------------------------------Create Instances of cluster 1 ------------------------------------------------------------
 
     # Create 4 instances with t2.large as intance type,
@@ -120,7 +129,7 @@ if __name__ == '__main__':
     Availabilityzons_Cluster1=['us-east-1a','us-east-1b','us-east-1a','us-east-1b','us-east-1a']
     instance_type = "t2.large"
     print("\n Creating instances of Cluster 1 with type : t2.large")
-    instances_t2= create_instance_ec2(4,ami_id, instance_type,key_pair_name,ec2_serviceresource,security_group_id,Availabilityzons_Cluster1)
+    instances_t2= create_instance_ec2(4,ami_id, instance_type,key_pair_name,ec2_serviceresource,security_group_id,Availabilityzons_Cluster1,ud)
     #print(instances_t2)
     print("\n Instances created succefuly instance type : t2.large")
 
@@ -131,16 +140,16 @@ if __name__ == '__main__':
     Availabilityzons_Cluster2=['us-east-1c','us-east-1d','us-east-1c','us-east-1d','us-east-1c']
     instance_type = "m4.large"
     print("\n Creating instances of Cluster 2 with type : m4.large")
-    instances_m4= create_instance_ec2(5,ami_id, instance_type,key_pair_name,ec2_serviceresource,security_group_id,Availabilityzons_Cluster2)
+    instances_m4= create_instance_ec2(5,ami_id, instance_type,key_pair_name,ec2_serviceresource,security_group_id,Availabilityzons_Cluster2,ud)
     #print(instances_m4)
     print("\n Instances created succefuly instance type  : m4.large")
 
     #--------------------------------------------Create Target groups ----------------------------------------------------------------
 
     #Create the two targets groups (Clusters)
-    TargetGroup1_name='Cluster1_t2.large'
+    TargetGroup1_name='Cluster1-t2-large'
     target_group_1=create_target_group(TargetGroup1_name,vpc_id,80, elbv2_serviceclient)
-    TargetGroup2_name='Cluster2_m4.large'
+    TargetGroup2_name='Cluster2-m4-large'
     target_group_2=create_target_group(TargetGroup2_name,vpc_id,8080, elbv2_serviceclient)
     print("\nTarget groups created")
 
@@ -150,8 +159,8 @@ if __name__ == '__main__':
     #---------------------------------------------Register Targets on target groups --------------------------------------------------
 
     #Targets registration on target groups
-    register_targets(elbv2_serviceclient,instances_t2,target_group_1,80) 
-    register_targets(elbv2_serviceclient,instances_m4,target_group_2,8080)
+    register_targets(elbv2_serviceclient,instances_t2,target_group_1) 
+    register_targets(elbv2_serviceclient,instances_m4,target_group_2)
     print("Targets registred")
 
     #----------------------------Get mapping between availability zones and Ids of default vpc subnets -------------------------------
@@ -181,17 +190,17 @@ if __name__ == '__main__':
 
     #Create listeners listener
     listeners=[]
-    listener_group1=create_listener(elbv2_serviceclient,load_balancerarn,target_group_1,80) 
-    listener_group2=create_listener(elbv2_serviceclient,load_balancerarn,target_group_2,8080)
+    listener_group1=create_listener(elbv2_serviceclient,load_balancerarn,target_group_1) 
+    #listener_group2=create_listener(elbv2_serviceclient,load_balancerarn,target_group_2)
     listeners.append(listener_group1)
-    listeners.append(listener_group2)
+    #listeners.append(listener_group2)
     print('Listeners created')
 
     #Create listeners rules
     rules=[]
 
     rule_list_1=create_listener_rule(elbv2_serviceclient,listener_group1,target_group_1,'/cluster1')
-    rule_list_2=create_listener_rule(elbv2_serviceclient,listener_group2,target_group_2,'/cluster2')
+    rule_list_2=create_listener_rule(elbv2_serviceclient,listener_group1,target_group_2,'/cluster2')
     
     rules.append(rule_list_1)
     rules.append(rule_list_2)
@@ -269,7 +278,7 @@ if __name__ == '__main__':
     time.sleep(120)
     #Terminate EC2 instances when not needed
     total_instances=instances_t2+instances_m4
-    terminate_instances(ec2_serviceresource,total_instances)
+    #terminate_instances(ec2_serviceresource,total_instances)
     print('Instances terminated')
     time.sleep(20)
     #Delete load balancer when not needed

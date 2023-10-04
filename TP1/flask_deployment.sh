@@ -7,7 +7,11 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get install -y python3-venv
 
 #Create directory
 
-mkdir flaskapp && cd flaskapp 
+# if [ -d "flaskapp" ]; then
+#   sudo rm -rf flaskapp
+# fi 
+
+mkdir /home/ubuntu/flaskapp && cd /home/ubuntu/flaskapp 
 
 #Create the virtual environment
 
@@ -26,7 +30,7 @@ pip install flask-restful
 pip install ec2_metadata
 #Create of a simple Flask app:
 
-cat <<EOL > flask_app.py
+cat <<EOL > /home/ubuntu/flaskapp/flask_app.py
 from ec2_metadata import ec2_metadata
 from flask import Flask
 
@@ -60,7 +64,7 @@ pip install gunicorn
 
 sudo cat <<EOL > /etc/systemd/system/flaskapp.service
 [Unit]
-Description=Gunicorn instance for a simple check of running
+Description=None
 After=network.target
 
 [Service]
