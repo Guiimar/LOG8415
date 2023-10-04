@@ -31,6 +31,7 @@ def second_thread(lb_dns,path):
     print('Finished sending 500 plus 1000 requests ')
 
 if __name__=='__main__':
+    
     client = boto3.client('elbv2', region_name='us-east-1',)
 
     url = client.describe_load_balancers()['LoadBalancers'][0]['DNSName']
