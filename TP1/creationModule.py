@@ -83,7 +83,7 @@ def create_security_group(Description,Groupe_name,vpc_id,resource):
 
 #Function to create ec2 instances : 
 def create_instance_ec2(num_instances,ami_id,
-    instance_type,key_pair_name,ec2_serviceresource,security_group_id,Availabilityzons):
+    instance_type,key_pair_name,ec2_serviceresource,security_group_id,Availabilityzons, user_data):
     instances=[]
     for i in range(num_instances):
         instance=ec2_serviceresource.create_instances(
@@ -94,13 +94,14 @@ def create_instance_ec2(num_instances,ami_id,
             MaxCount=1,
             Placement={'AvailabilityZone':Availabilityzons[i]},
             SecurityGroupIds=[security_group_id] if security_group_id else [],
+            UserData=user_data,
             TagSpecifications=[
                     {
                         'ResourceType': 'instance',
                         'Tags': [
                             {
                                 'Key': 'Name',
-                                'Value': 'lab1-ec2-instance-'+str(instance_type)+ str(i + 1)
+                                'Value': 'lab1-ec2-instance-'+str(instance_type)+"-"+str(i + 1)
                             },
                         ]
                     },

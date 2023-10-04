@@ -19,6 +19,7 @@ from creationModule import *
 from send_requests import *
 from delete_process import * 
 from metrics_visualization import *
+import base64
 
 # Here is the main program :
 
@@ -91,6 +92,7 @@ if __name__ == '__main__':
   
     try:
         security_group_id = create_security_group("All traffic sec_group","lab1_security_group",vpc_id,ec2_serviceresource)  
+    
     except :
         #Get the standard security group from the default VPC :
         sg_dict = ec2_serviceclient.describe_security_groups(Filters=[
@@ -113,6 +115,12 @@ if __name__ == '__main__':
         security_group_id = (sg_dict.get("SecurityGroups")[0]).get("GroupId")
     
 
+    #--------------------------------------Pass the script into the user_data parameter ------------------------------------------------------------
+    
+    with open('flask_deployment.sh', 'r') as f :
+        flask_script = f.read()
+
+    ud = base64.b64encode(flask_script.encode()).decode()
     #--------------------------------------Create Instances of cluster 1 ------------------------------------------------------------
 
     # Create 4 instances with t2.large as intance type,
@@ -120,7 +128,7 @@ if __name__ == '__main__':
     Availabilityzons_Cluster1=['us-east-1a','us-east-1b','us-east-1a','us-east-1b','us-east-1a']
     instance_type = "t2.large"
     print("\n Creating instances of Cluster 1 with type : t2.large")
-    instances_t2= create_instance_ec2(4,ami_id, instance_type,key_pair_name,ec2_serviceresource,security_group_id,Availabilityzons_Cluster1)
+    instances_t2= create_instance_ec2(1,ami_id, instance_type,key_pair_name,ec2_serviceresource,security_group_id,Availabilityzons_Cluster1,ud)
     #print(instances_t2)
     print("\n Instances created succefuly instance type : t2.large")
 
@@ -131,7 +139,7 @@ if __name__ == '__main__':
     Availabilityzons_Cluster2=['us-east-1c','us-east-1d','us-east-1c','us-east-1d','us-east-1c']
     instance_type = "m4.large"
     print("\n Creating instances of Cluster 2 with type : m4.large")
-    instances_m4= create_instance_ec2(5,ami_id, instance_type,key_pair_name,ec2_serviceresource,security_group_id,Availabilityzons_Cluster2)
+    instances_m4= create_instance_ec2(5,ami_id, instance_type,key_pair_name,ec2_serviceresource,security_group_id,Availabilityzons_Cluster2,ud)
     #print(instances_m4)
     print("\n Instances created succefuly instance type  : m4.large")
 
