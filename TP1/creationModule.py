@@ -154,6 +154,16 @@ def create_listener(elbv2_seviceclient,load_balancer_arn):
     LoadBalancerArn=load_balancer_arn,
     Port=80,
     Protocol='HTTP',
+    DefaultActions=[
+        {
+           'Type':'fixed-response',
+           'FixedResponseConfig':{
+               'StatusCode': '10',
+               'ContentType':'Text/plain',
+               'ContentBody': 'ListenerLab'
+           }
+        }
+        ]
     )
     response_listener_arn=response_listener["Listeners"][0]["ListenerArn"]
    
