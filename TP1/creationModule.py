@@ -114,11 +114,11 @@ def create_instance_ec2(num_instances,ami_id,
     return instances
 
 #Function to create target groups : 
-def create_target_group(targetname,vpc_id, elbv2_serviceclient):
+def create_target_group(targetname,vpc_id,port, elbv2_serviceclient):
     tg_response=elbv2_serviceclient.create_target_group(
         Name=targetname,
         Protocol='HTTP',
-        Port=80,
+        Port=port,
         VpcId=vpc_id,
         TargetType ='instance'
     )
