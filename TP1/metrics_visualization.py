@@ -14,46 +14,48 @@ def client_cloudwatch(aws_access_key_id, aws_secret_access_key, aws_session_toke
 
 #Function to get a dictionary of timestamps List and Cloudwatch metric Lists of target groups of an ALB in a specific time interval: 
 def get_metric_clusters(Cloudwatch_client,Id,MetricName,LoadBalancer_Name,TargetGroups_Names_list,Start_Time, End_Time,Period,Stat):
-   TargetGroups_Metrics={}
-   for TargterGroup in  TargetGroups_Names_list:
+        TargetGroups_Metrics={}
+        for TargterGroup in  TargetGroups_Names_list:
 
-    Target_cloudwatch=Cloudwatch_client.get_metric_data(
-        MetricDataQueries=[
-            {
-                'Id':Id,
-                'MetricStat':{
-                    'Metric':{
-                        'Namespace': 'AWS/ApplicationELB',
-                        'MetricName':MetricName,
-                        'Dimensions':[
-                            {'Name':'LoadBalancer',
-                                'Value': LoadBalancer_Name
-                                
+            Target_cloudwatch=Cloudwatch_client.get_metric_data(
+                MetricDataQueries=[
+                    {
+                        'Id':Id,
+                        'MetricStat':{
+                            'Metric':{
+                                'Namespace': 'AWS/ApplicationELB',
+                                'MetricName':MetricName,
+                                'Dimensions':[
+                                    {'Name':'LoadBalancer',
+                                        'Value': LoadBalancer_Name
+                                        
+                                    },
+                                    {
+                                        'Name':'TargetGroup',
+                                        'Value':TargterGroup
+
+                                    }
+                                ]
                             },
-                            {
-                                'Name':'TargetGroup',
-                                'Value':TargterGroup
+                        'Stat':Stat,
+                        #'Label': str(MetricName+' metric for '+TargterGroup+' Of '+LoadBalancer_Name),
+                        'Period':Period,
 
-                            }
-                        ]
+                        },
+                        'ReturnData':True,
                     },
-                 'Stat':Stat,
-                 'Label': str(MetricName+' metric for '+TargterGroup+' Of '+LoadBalancer_Name),
-                 'Period':Period,
-                 'ReturnData':True
+                ],
+                StartTime=Start_Time,
+                EndTime=End_Time
+            )
+            (metric_list,)=Target_cloudwatch['MetricDataResults'][0]['Values'],
+            print(metric_list)
+            time_stamps=Target_cloudwatch['MetricDataResults'][0]['Timestamps']
+            #print(type(time_stamps))
+            TargetGroups_Metrics[str(LoadBalancer_Name)+'/'+str(TargterGroup)]=metric_list[0],
+            TargetGroups_Metrics['timestamps']=time_stamps
 
-                }
-            },
-        ],
-        StartTime=Start_Time,
-        EndTime=End_Time
-    )
-    metric_list=Target_cloudwatch['MetricDataResults'][0]['Values'],
-    time_stamps=Target_cloudwatch['MetricDataResults'][0]['Timestamps']
-    TargetGroups_Metrics[str(LoadBalancer_Name)+'/'+str(TargterGroup)]=metric_list,
-    TargetGroups_Metrics['timestamps']=time_stamps
-
-    return TargetGroups_Metrics
+        return TargetGroups_Metrics
 
 #Function to plot metric values of all target groups of an ALB in one graph and save it in a path
 def plot_metric_per_cluster(values_timestamp_dict,MetricName,path):

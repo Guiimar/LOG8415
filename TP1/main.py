@@ -213,8 +213,37 @@ if __name__ == '__main__':
     
     # The start time of the test scenario
     StartTime=datetime.utcnow()
+    print(StartTime)
 
     #Sending Two threads using the two paths (/Cluster1 and /Cluster2)
+    def consumeGETRequestSync(url_lb,path):
+        try:
+            url="http://{}/{}".format(url_lb, path)
+            #print(url)
+            #headers={'content-type': 'application/json'}
+            r=requests.get(url)
+            #print(r.status_code)
+            #print(r.json(),end=' status ')
+        except Exception as e:
+            print('Exception returned is',e)
+
+    def first_thread(lb_dns,path):
+        print('Starting sending 1000 requests')
+        for _ in range(1000):
+            consumeGETRequestSync(lb_dns,path)
+        print('Finished sending 1000 requests')
+
+    #5OO requests then 60 seconds sleep then 1000 requests
+    def second_thread(lb_dns,path):
+        for _ in range(500):
+            consumeGETRequestSync(lb_dns,path)
+        
+        time.sleep(60)
+
+        for _ in range(1000):
+            consumeGETRequestSync(lb_dns,path)
+
+        print('Finished sending 500 plus 1000 requests ')
     for path in ['cluster1','cluster2']:
         #Defining the threads
         first_sending_thread=Thread(target=first_thread,args=(url,path))
@@ -228,6 +257,7 @@ if __name__ == '__main__':
     
     # The start time of the test scenario
     EndTime=datetime.utcnow()
+    print(EndTime)
 
     print('script terminated')
     #---------------------------------------------Plot metrics -----------------------------------------------------------------------
@@ -237,12 +267,57 @@ if __name__ == '__main__':
     #Target Groups names list
     TargetGroups_Names_list=[TargetGroup1_name,TargetGroup2_name]
     #Period of 1.5 minutes
-    Period=90
+    Period=60
     #Path to save the plots
     path='Visualization\\'
 
     #Retrieve 'CountRequest' metric per cluster
-    CountRequest_dict=get_metric_clusters(Cloudwatch_client,'Metric1','CountRequest',LoadBalancerName,TargetGroups_Names_list,StartTime, EndTime,Period,Stat='Sum')
+    def get_metric_clusters(Cloudwatch_client,Id,MetricName,LoadBalancer_Name,TargetGroups_Names_list,Start_Time, End_Time,Period,Stat):
+        TargetGroups_Metrics={}
+        for TargterGroup in  TargetGroups_Names_list:
+
+            Target_cloudwatch=Cloudwatch_client.get_metric_data(
+                MetricDataQueries=[
+                    {
+                        'Id':Id,
+                        'MetricStat':{
+                            'Metric':{
+                                'Namespace': 'AWS/ApplicationELB',
+                                'MetricName':MetricName,
+                                'Dimensions':[
+                                    {'Name':'LoadBalancer',
+                                        'Value': LoadBalancer_Name
+                                        
+                                    },
+                                    {
+                                        'Name':'TargetGroup',
+                                        'Value':TargterGroup
+
+                                    }
+                                ]
+                            },
+                        'Stat':Stat,
+                        #'Label': str(MetricName+' metric for '+TargterGroup+' Of '+LoadBalancer_Name),
+                        'Period':Period,
+
+                        },
+                        'ReturnData':True,
+                    },
+                ],
+                StartTime=Start_Time,
+                EndTime=End_Time
+            )
+            (metric_list,)=Target_cloudwatch['MetricDataResults'][0]['Values'],
+            #print(metric_list)
+            time_stamps=Target_cloudwatch['MetricDataResults'][0]['Timestamps']
+            print(time_stamps)
+            TargetGroups_Metrics[str(LoadBalancer_Name)+'/'+str(TargterGroup)]=metric_list[0],
+            TargetGroups_Metrics['timestamps']=time_stamps
+
+            return TargetGroups_Metrics
+    from datetime import timedelta
+    CountRequest_dict=get_metric_clusters(Cloudwatch_client,'a1','CountRequest',LoadBalancerName,TargetGroups_Names_list,StartTime, EndTime,Period,Stat='Sum')
+    CountRequest_dict
     #Plot 'CountRequest' metric per cluster in the specified path
     plot_metric_per_cluster(CountRequest_dict,'CountRequest',path)
 
@@ -262,13 +337,13 @@ if __name__ == '__main__':
     plot_metric_per_cluster(TargetConnectionErrorCount_dict,'TargetConnectionErrorCount',path)
     
     #Instances Ids of TG1
-    Instances_Ids_TG1=[Instance.id for Instance in instances_t2 ]
+    Instances_Ids_TG1=[Instance for Instance in instances_t2 ]
     #Instances Ids of TG2
-    Instances_Ids_TG2=[Instance.id for Instance in instances_m4 ]
+    Instances_Ids_TG2=[Instance for Instance in instances_m4 ]
 
     #Retrieve Average 'CPUUtilization' metric of all instances per cluster
-    CPUutilization_TG1_dict=get_average_Instances_metrics_per_cluster(Cloudwatch_client,'Metric5','CPUUtilization',TargetGroup1_name,Instances_Ids_TG1,StartTime, EndTime,Period,Stat='Average') 
-    CPUutilization_TG2_dict=get_average_Instances_metrics_per_cluster(Cloudwatch_client,'Metric6','CPUUtilization',TargetGroup2_name,Instances_Ids_TG2,StartTime, EndTime,Period,Stat='Average') 
+    CPUutilization_TG1_dict=get_average_Instances_metrics_per_cluster(Cloudwatch_client,'a5','CPUUtilization',TargetGroup1_name,Instances_Ids_TG1,StartTime, EndTime,Period,Stat='Average') 
+    CPUutilization_TG2_dict=get_average_Instances_metrics_per_cluster(Cloudwatch_client,'a6','CPUUtilization',TargetGroup2_name,Instances_Ids_TG2,StartTime, EndTime,Period,Stat='Average') 
     #Plot Average 'CPUUtilization' metric of all instances per cluster
     plot_average_Instances_metrics_per_cluster(CPUutilization_TG1_dict,CPUutilization_TG2_dict,'CPUUtilization',path)
 
