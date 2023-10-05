@@ -154,7 +154,7 @@ if __name__ == '__main__':
     print("\nTarget groups created")
 
     #time to wait for udate ec2 running status before registration in target groups
-    time.sleep(60)
+    time.sleep(120)
 
     #---------------------------------------------Register Targets on target groups --------------------------------------------------
 
@@ -198,9 +198,8 @@ if __name__ == '__main__':
 
     #Create listeners rules
     rules=[]
-
-    rule_list_1=create_listener_rule(elbv2_serviceclient,listener_group,target_group_1,'/cluster1')
-    rule_list_2=create_listener_rule(elbv2_serviceclient,listener_group,target_group_2,'/cluster2')
+    rule_list_1=create_listener_rule(elbv2_serviceclient,listener_group,target_group_1,'/cluster1',2)
+    rule_list_2=create_listener_rule(elbv2_serviceclient,listener_group,target_group_2,'/cluster2',3)
     
     rules.append(rule_list_1)
     rules.append(rule_list_2)

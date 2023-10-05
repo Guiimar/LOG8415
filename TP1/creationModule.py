@@ -150,47 +150,47 @@ def create_load_balancer(elbv2_seviceclient,LB_name,subnets,security_group):
 
 #Function to create listeners:
 def create_listener(elbv2_seviceclient,load_balancer_arn):
-    response_listener=elbv2_seviceclient.create_listener(
-    LoadBalancerArn=load_balancer_arn,
-    Port=80,
-    Protocol='HTTP',
-    DefaultActions=[
-        {
-           'Type':'fixed-response',
-           'FixedResponseConfig':{
-               'StatusCode': '10',
-               'ContentType':'Text/plain',
-               'ContentBody': 'ListenerLab'
-           }
-        }
-        ]
-    )
-    response_listener_arn=response_listener["Listeners"][0]["ListenerArn"]
+        response_listener=elbv2_seviceclient.create_listener(
+        LoadBalancerArn=load_balancer_arn,
+        Port=80,
+        Protocol='HTTP',
+        DefaultActions=[
+            {
+            'Type':'fixed-response',
+            'FixedResponseConfig':{
+                'StatusCode': '200',
+                'ContentType':'text/plain',
+                'MessageBody': 'ListenerLab'
+            }
+            }
+            ]
+        )
+        response_listener_arn=response_listener["Listeners"][0]["ListenerArn"]
    
-    return response_listener_arn
+        return response_listener_arn
 
 #Function to create listener rules
 def create_listener_rule(elbv2_seviceclient,listener_arn, target_group_arn, path,prio):
-    response = elbv2_seviceclient.create_rule(
-        ListenerArn=listener_arn,
-        Priority=1,
-        Conditions=[
-            {
-                'Field': 'path-pattern',
-                'Values': [path]
-            }
-        ],
-        Actions=[
-            {
-                'Type': 'forward',
-                'ForwardConfig': {
-                    'TargetGroups': [{'TargetGroupArn': target_group_arn}]
+        response = elbv2_seviceclient.create_rule(
+            ListenerArn=listener_arn,
+            Priority=prio,
+            Conditions=[
+                {
+                    'Field': 'path-pattern',
+                    'Values': [path]
                 }
-            }
-        ]
-    )
-    response_rule_listener = response['Rules'][0]['RuleArn']
-    return response_rule_listener
+            ],
+            Actions=[
+                {
+                    'Type': 'forward',
+                    'ForwardConfig': {
+                        'TargetGroups': [{'TargetGroupArn': target_group_arn}]
+                    }
+                }
+            ]
+        )
+        response_rule_listener = response['Rules'][0]['RuleArn']
+        return response_rule_listener
     
 
 
