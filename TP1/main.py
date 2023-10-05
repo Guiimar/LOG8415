@@ -263,10 +263,11 @@ if __name__ == '__main__':
     #---------------------------------------------Plot metrics -----------------------------------------------------------------------
     #Create Cloudwatch client
     Cloudwatch_client=client_cloudwatch(key_id, access_key, session_token)
-    
+    Cloudwatch_client.list_metrics()
+
     #Target Groups names list
-    TargetGroups_Names_list=[TargetGroup1_name,TargetGroup2_name]
-    #Period of 1.5 minutes
+    TargetGroups_Names_list=[target_group_1,target_group_2]
+    #Period of 1 hour
     Period=60
     #Path to save the plots
     path='Visualization\\'
@@ -285,7 +286,8 @@ if __name__ == '__main__':
                                 'Namespace': 'AWS/ApplicationELB',
                                 'MetricName':MetricName,
                                 'Dimensions':[
-                                    {'Name':'LoadBalancer',
+                                    {
+                                        'Name':'LoadBalancer',
                                         'Value': LoadBalancer_Name
                                         
                                     },
@@ -294,7 +296,7 @@ if __name__ == '__main__':
                                         'Value':TargterGroup
 
                                     }
-                                ]
+                                ],
                             },
                         'Stat':Stat,
                         #'Label': str(MetricName+' metric for '+TargterGroup+' Of '+LoadBalancer_Name),
@@ -305,18 +307,19 @@ if __name__ == '__main__':
                     },
                 ],
                 StartTime=Start_Time,
-                EndTime=End_Time
+                EndTime=End_Time,
             )
-            (metric_list,)=Target_cloudwatch['MetricDataResults'][0]['Values'],
-            #print(metric_list)
-            time_stamps=Target_cloudwatch['MetricDataResults'][0]['Timestamps']
+            metric_list=[a[Stat] for a in Target_cloudwatch['MetricDataResults'][0]['Values']]
+            print(metric_list)
+            time_stamps=[a['Timestamp'] for a in Target_cloudwatch['MetricDataResults'][0]['Timestamps']]
             print(time_stamps)
-            TargetGroups_Metrics[str(LoadBalancer_Name)+'/'+str(TargterGroup)]=metric_list[0],
-            TargetGroups_Metrics['timestamps']=time_stamps
+            TargetGroups_Metrics[str(LoadBalancer_Name)+'/'+str(TargterGroup)]=metric_list
+        TargetGroups_Metrics['timestamps']=time_stamps
 
-            return TargetGroups_Metrics
+        return Target_cloudwatch
+    
     from datetime import timedelta
-    CountRequest_dict=get_metric_clusters(Cloudwatch_client,'a1','CountRequest',LoadBalancerName,TargetGroups_Names_list,StartTime, EndTime,Period,Stat='Sum')
+    CountRequest_dict=get_metric_clusters(Cloudwatch_client,'c1','Requests',LoadBalancerName,TargetGroups_Names_list,EndTime-timedelta(minutes=500), EndTime,Period,'Sum')
     CountRequest_dict
     #Plot 'CountRequest' metric per cluster in the specified path
     plot_metric_per_cluster(CountRequest_dict,'CountRequest',path)
