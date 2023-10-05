@@ -46,7 +46,7 @@ def cluster_1():
 
 @app.route('/cluster2')
 def cluster_2():
-    return("Instance id: "+ str(ec2_metadata.instance_id)+" is responding from cluster 1!\n")
+    return("Instance id: "+ str(ec2_metadata.instance_id)+" is responding from cluster 2!\n")
 
 EOL
 
