@@ -6,18 +6,8 @@ def terminate_instances(ec2_serviceresource,instances_ids):
         ec2_serviceresource.Instance(id).terminate()
     return("Instances terminated")
 
-#Function to delete LoadBalancer, rules and listeners and 
-def delete_load_balancer(elbv2_serviceclient, load_balancer_arn, listeners, rules):
-
-    for rule in rules :
-        elbv2_serviceclient.delete_rule(
-        RuleArn=rule
-        )
-    
-    for listener in listeners :
-        elbv2_serviceclient.delete_listener(
-            ListenerArn=listener,
-        )
+#Function to delete LoadBalancer
+def delete_load_balancer(elbv2_serviceclient, load_balancer_arn):
     
     elbv2_serviceclient.delete_load_balancer(
         LoadBalancerArn=load_balancer_arn

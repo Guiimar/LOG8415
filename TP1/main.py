@@ -283,7 +283,6 @@ if __name__ == '__main__':
     #Instances Ids of TG2
     Instances_Ids_TG2=[Instance for Instance in instances_m4 ]
    
-
     #Retrieve Average 'CPUUtilization' metric of all instances per cluster
     CPUutilization_TG1_dict=get_average_Instances_metrics_per_cluster(Cloudwatch_client,'metric5','CPUUtilization',Instances_Ids_TG1,EndTime-timedelta(minutes=10), EndTime+timedelta(minutes=10),60,'Sum') 
     CPUutilization_TG2_dict=get_average_Instances_metrics_per_cluster(Cloudwatch_client,'metric6','CPUUtilization',Instances_Ids_TG2,EndTime-timedelta(minutes=10), EndTime+timedelta(minutes=10),60,'Sum') 
@@ -296,7 +295,6 @@ if __name__ == '__main__':
     #Plot Average 'NetworkPacketsIn' metric of all instances per cluster
     plot_average_Instances_metrics_per_cluster(NetworkPacketsIn_TG1_dict,NetworkPacketsIn_TG2_dict,target_group_1,target_group_2,'NetworkPacketsIn',path)
 
-    CPUutilization_TG1_dict
 #3============================>Termination and deletion
     time.sleep(120)
     #Terminate EC2 instances when not needed
@@ -305,7 +303,7 @@ if __name__ == '__main__':
     print('Instances terminated')
     time.sleep(20)
     #Delete load balancer when not needed
-    delete_load_balancer(elbv2_serviceclient,load_balancerarn,listeners,rules)
+    delete_load_balancer(elbv2_serviceclient,load_balancerarn)
     print('Load balancer deleted')
     time.sleep(20)
     #Delete target groups when not needed
