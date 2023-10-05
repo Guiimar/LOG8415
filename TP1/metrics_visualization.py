@@ -63,7 +63,7 @@ def plot_metric_per_cluster(values_timestamp_dict,MetricName,path):
    time=values_timestamp_dict['timestamps']
    del values_timestamp_dict['timestamps']
    LoadBalancerName=list(values_timestamp_dict.keys())[0].split('/')[0]
-   plt.figure()
+   plt.figure(12,12)
    for key in list(values_timestamp_dict.keys()):
       plt.plot(time,values_timestamp_dict[key],label=str(key))
    plt.xlabel('Time')

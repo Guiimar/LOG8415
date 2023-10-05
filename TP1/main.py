@@ -207,7 +207,7 @@ if __name__ == '__main__':
     print('Listner rules created')
 
 #2============================>Benchemarking
-
+    
     #------------------------------------------Sending requests -----------------------------------------------------------------------
     url = elbv2_serviceclient.describe_load_balancers()['LoadBalancers'][0]['DNSName']
     
@@ -268,9 +268,9 @@ if __name__ == '__main__':
     #Target Groups names list
     TargetGroups_Names_list=[target_group_1,target_group_2]
     #Period of 1 hour
-    Period=60
+    Period=120
     #Path to save the plots
-    path='Visualization\\'
+    path='Visualizations\\'
 
     #Retrieve 'CountRequest' metric per cluster
     def get_metric_clusters(Cloudwatch_client,Id,MetricName,LoadBalancer_Name,TargetGroups_Names_list,Start_Time, End_Time,Period,Stat):
@@ -297,31 +297,55 @@ if __name__ == '__main__':
 
                                     }
                                 ],
+
                             },
                         'Stat':Stat,
                         #'Label': str(MetricName+' metric for '+TargterGroup+' Of '+LoadBalancer_Name),
                         'Period':Period,
 
                         },
-                        'ReturnData':True,
+                        'ReturnData':True
                     },
                 ],
                 StartTime=Start_Time,
                 EndTime=End_Time,
             )
-            metric_list=[a[Stat] for a in Target_cloudwatch['MetricDataResults'][0]['Values']]
-            print(metric_list)
-            time_stamps=[a['Timestamp'] for a in Target_cloudwatch['MetricDataResults'][0]['Timestamps']]
-            print(time_stamps)
+            metric_list=Target_cloudwatch['MetricDataResults'][0]['Values']
+            # [a[Stat] for a in Target_cloudwatch['MetricDataResults'][0]['Values']]
+            #print(metric_list)
+            time_stamps=Target_cloudwatch['MetricDataResults'][0]['Timestamps']
+            # [a['Timestamp'] for a in Target_cloudwatch['MetricDataResults'][0]['Timestamps']]
+            #print(time_stamps)
             TargetGroups_Metrics[str(LoadBalancer_Name)+'/'+str(TargterGroup)]=metric_list
-        TargetGroups_Metrics['timestamps']=time_stamps
+            TargetGroups_Metrics['timestamps']=time_stamps
 
-        return Target_cloudwatch
-    
+        return TargetGroups_Metrics
+    load_balancerarn
+    target_group_2
     from datetime import timedelta
-    CountRequest_dict=get_metric_clusters(Cloudwatch_client,'c1','Requests',LoadBalancerName,TargetGroups_Names_list,EndTime-timedelta(minutes=500), EndTime,Period,'Sum')
+    CountRequest_dict=get_metric_clusters(Cloudwatch_client,'zzzzsss1','RequestCount','app/OurALB/dfba148bad6d8b38',['targetgroup/Cluster1-t2-large/928c1b694162ceff','targetgroup/Cluster2-m4-large/ef4f357a3d4308ad'],EndTime-timedelta(minutes=6),EndTime+timedelta(minutes=5),30,'Sum')
     CountRequest_dict
+    #type(CountRequest_dict['MetricDataResults'][0]['Values'])
+    #Cloudwatch_client.list_metrics(Namespace='AWS/ApplicationELB',Dimensions=[{'Name': 'LoadBalancer', 'Value': LoadBalancerName}])
+    #[m.get('Dimensions', []) for m in Cloudwatch_client.list_metrics(Namespace='AWS/ApplicationELB')['Metrics']]
+    #Cloudwatch_client.list_metrics(Namespace='AWS/ApplicationELB')
+    #Cloudwatch_client.get_metric_statistics('AWS/ApplicationELB','RequestCountPerTarget',StartTime.isoformat(),EndTime.isoformat(),Period)
     #Plot 'CountRequest' metric per cluster in the specified path
+
+    def plot_metric_per_cluster(values_timestamp_dict,MetricName,path):
+   
+        time=values_timestamp_dict['timestamps']
+        del values_timestamp_dict['timestamps']
+        LoadBalancerName=list(values_timestamp_dict.keys())[0].split('/')[0]
+        plt.figure(figsize=(12,9))
+        for key in list(values_timestamp_dict.keys()):
+            plt.plot(time,values_timestamp_dict[key],label=str(key))
+        plt.xlabel('Time')
+        plt.ylabel(str(MetricName))
+        plt.title(str(MetricName)+' per cluster of '+str(LoadBalancerName))
+        plt.legend(loc='upper right')
+        plt.tight_layout()
+        plt.savefig(path+str(MetricName)+'_per_cluster_of_'+str(LoadBalancerName)+'.png')
     plot_metric_per_cluster(CountRequest_dict,'CountRequest',path)
 
     #Retrieve 'RequestCountPerTarget' metric per cluster
