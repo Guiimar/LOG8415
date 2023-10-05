@@ -52,8 +52,8 @@ def get_metric_clusters(Cloudwatch_client,Id,MetricName,LoadBalancerarn,TargetGr
                 StartTime=Start_Time,
                 EndTime=End_Time,
             )
-            metric_list=Target_cloudwatch['MetricDataResults'][0]['Values']
-            time_stamps=time_stamps=[t.strftime('%H:%M') for t in Target_cloudwatch['MetricDataResults'][0]['Timestamps']]
+            metric_list=Target_cloudwatch['MetricDataResults'][0]['Values'][::-1]
+            time_stamps=[t.strftime('%H:%M') for t in Target_cloudwatch['MetricDataResults'][0]['Timestamps']][::-1]
             TargetGroups_Metrics[arn_tg]=metric_list
             TargetGroups_Metrics['timestamps']=time_stamps
 
@@ -103,10 +103,10 @@ def get_average_Instances_metrics_per_cluster(Cloudwatch_client,Id,MetricName,In
                 StartTime=Start_Time,
                 EndTime=End_Time
                 )
-            EC2_Metrics[EC2_Id]=EC2_Cloudwatch['MetricDataResults'][0]['Values']
+            EC2_Metrics[EC2_Id]=EC2_Cloudwatch['MetricDataResults'][0]['Values'][::-1]
         
         Average_metric=[sum(i)/len(i) for i in zip(*EC2_Metrics.values())]
-        time_stamps=[t.strftime('%H:%M') for t in EC2_Cloudwatch['MetricDataResults'][0]['Timestamps']]
+        time_stamps=[t.strftime('%H:%M') for t in EC2_Cloudwatch['MetricDataResults'][0]['Timestamps']][::-1]
         
         EC2_Metrics[str(MetricName)]=Average_metric
         EC2_Metrics['timestamps']=time_stamps

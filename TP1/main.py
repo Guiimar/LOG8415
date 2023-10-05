@@ -151,10 +151,11 @@ if __name__ == '__main__':
     TargetGroup1_name='Cluster1-t2-large'
     target_group_1=create_target_group(TargetGroup1_name,vpc_id,80, elbv2_serviceclient)
     TargetGroup2_name='Cluster2-m4-large'
-    target_group_2=create_target_group(TargetGroup2_name,vpc_id,8080, elbv2_serviceclient)
+    target_group_2=create_target_group(TargetGroup2_name,vpc_id,80, elbv2_serviceclient)
     print("\nTarget groups created")
 
     #time to wait for udate ec2 running status before registration in target groups
+    print("\nWaiting for EC2 to become on running status before registration in Target groups")
     time.sleep(120)
 
     #---------------------------------------------Register Targets on target groups --------------------------------------------------
@@ -217,10 +218,11 @@ if __name__ == '__main__':
     # The start time of the test scenario
     StartTime=datetime.utcnow()
     print(StartTime)
-
+    print('Waiting for flask app installation on EC2s and for ALB to be ready before send requests...')
+    time.sleep(120)
     #Sending Two threads using the two paths (/Cluster1 and /Cluster2)
     for path in ['cluster1','cluster2']:
-        print('---Sending Threads to: '+str(path)+'---')
+        print('\n---Sending Threads to: '+str(path)+'---')
         #Defining the threads
         first_sending_thread=Thread(target=first_thread,args=(url,path))
         second_sending_thread=Thread(target=second_thread,args=(url,path))
@@ -256,22 +258,23 @@ if __name__ == '__main__':
     path='Visualizations\\'
 
     #Retrieve 'RequestCount' metric per cluster
-    RequestCount_dict=get_metric_clusters(Cloudwatch_client,'metric1','RequestCount',load_balancerarn,TargetGroups_arns_list,EndTime-timedelta(minutes=10),EndTime+timedelta(minutes=10),Period,'Sum')
+    RequestCount_dict=get_metric_clusters(Cloudwatch_client,'metric1','RequestCount',load_balancerarn,TargetGroups_arns_list,EndTime-timedelta(minutes=6),EndTime+timedelta(minutes=2),Period,'Sum')
+    RequestCount_dict
     #Plot 'RequestCount' metric per cluster in the specified path
     plot_metric_per_cluster(RequestCount_dict,'RequestCount',path)
 
     #Retrieve 'RequestCountPerTarget' metric per cluster
-    CountRequestPerTarget_dict=get_metric_clusters(Cloudwatch_client,'metric2','RequestCountPerTarget',load_balancerarn,TargetGroups_arns_list,EndTime-timedelta(minutes=10),EndTime+timedelta(minutes=10),Period,'Sum')
+    CountRequestPerTarget_dict=get_metric_clusters(Cloudwatch_client,'metric2','RequestCountPerTarget',load_balancerarn,TargetGroups_arns_list,EndTime-timedelta(minutes=6),EndTime+timedelta(minutes=2),60,'Sum')
     #Plot 'RequestCountPerTarget' metric per cluster in the specified path
     plot_metric_per_cluster(CountRequestPerTarget_dict,'RequestCountPerTarget',path)
 
     #Retrieve 'TargetResponseTime' metric per cluster
-    TargetResponseTime_dict=get_metric_clusters(Cloudwatch_client,'metric3','TargetResponseTime',load_balancerarn,TargetGroups_arns_list,EndTime-timedelta(minutes=5),EndTime+timedelta(minutes=5),Period,'Sum')
+    TargetResponseTime_dict=get_metric_clusters(Cloudwatch_client,'metric3','TargetResponseTime',load_balancerarn,TargetGroups_arns_list,EndTime-timedelta(minutes=6),EndTime+timedelta(minutes=2),60,'Sum')
     #Plot 'TargetResponseTime' metric per cluster in the specified path
     plot_metric_per_cluster(TargetResponseTime_dict,'TargetResponseTime',path)
 
     #Retrieve Minimum 'HealthyHostCount' metric per cluster
-    HealthyHostCount_dict=get_metric_clusters(Cloudwatch_client,'metric4','HealthyHostCount',load_balancerarn,TargetGroups_arns_list,EndTime-timedelta(minutes=10),EndTime+timedelta(minutes=10),Period,'Minimum')
+    HealthyHostCount_dict=get_metric_clusters(Cloudwatch_client,'metric4','HealthyHostCount',load_balancerarn,TargetGroups_arns_list,EndTime-timedelta(minutes=6),EndTime+timedelta(minutes=2),60,'Minimum')
     #Plot 'Healthy Hosts' metric per cluster in the specified path
     plot_metric_per_cluster(HealthyHostCount_dict,'Minimum HealthyHostCount',path)
     
@@ -280,19 +283,20 @@ if __name__ == '__main__':
     #Instances Ids of TG2
     Instances_Ids_TG2=[Instance for Instance in instances_m4 ]
    
+
     #Retrieve Average 'CPUUtilization' metric of all instances per cluster
-    CPUutilization_TG1_dict=get_average_Instances_metrics_per_cluster(Cloudwatch_client,'metric5','CPUUtilization',Instances_Ids_TG1,EndTime-timedelta(minutes=10), EndTime+timedelta(minutes=10),Period,'Sum') 
-    CPUutilization_TG2_dict=get_average_Instances_metrics_per_cluster(Cloudwatch_client,'metric6','CPUUtilization',Instances_Ids_TG2,EndTime-timedelta(minutes=10), EndTime+timedelta(minutes=10),Period,'Sum') 
+    CPUutilization_TG1_dict=get_average_Instances_metrics_per_cluster(Cloudwatch_client,'metric5','CPUUtilization',Instances_Ids_TG1,EndTime-timedelta(minutes=10), EndTime+timedelta(minutes=10),60,'Sum') 
+    CPUutilization_TG2_dict=get_average_Instances_metrics_per_cluster(Cloudwatch_client,'metric6','CPUUtilization',Instances_Ids_TG2,EndTime-timedelta(minutes=10), EndTime+timedelta(minutes=10),60,'Sum') 
     #Plot Average 'CPUUtilization' metric of all instances per cluster
     plot_average_Instances_metrics_per_cluster(CPUutilization_TG1_dict,CPUutilization_TG2_dict,target_group_1,target_group_2,'CPUUtilization',path)
 
     #Retrieve Average 'NetworkPacketsIn' metric of all instances per cluster
-    NetworkPacketsIn_TG1_dict=get_average_Instances_metrics_per_cluster(Cloudwatch_client,'metric7','NetworkPacketsIn',Instances_Ids_TG1,EndTime-timedelta(minutes=10), EndTime+timedelta(minutes=10),Period,'Sum') 
-    NetworkPacketsIn_TG2_dict=get_average_Instances_metrics_per_cluster(Cloudwatch_client,'metric8','NetworkPacketsIn',Instances_Ids_TG2,EndTime-timedelta(minutes=10), EndTime+timedelta(minutes=10),Period,'Sum') 
+    NetworkPacketsIn_TG1_dict=get_average_Instances_metrics_per_cluster(Cloudwatch_client,'metric7','NetworkPacketsIn',Instances_Ids_TG1,EndTime-timedelta(minutes=10), EndTime+timedelta(minutes=10),60,'Sum') 
+    NetworkPacketsIn_TG2_dict=get_average_Instances_metrics_per_cluster(Cloudwatch_client,'metric8','NetworkPacketsIn',Instances_Ids_TG2,EndTime-timedelta(minutes=10), EndTime+timedelta(minutes=10),60,'Sum') 
     #Plot Average 'NetworkPacketsIn' metric of all instances per cluster
     plot_average_Instances_metrics_per_cluster(NetworkPacketsIn_TG1_dict,NetworkPacketsIn_TG2_dict,target_group_1,target_group_2,'NetworkPacketsIn',path)
 
-
+    CPUutilization_TG1_dict
 #3============================>Termination and deletion
     time.sleep(120)
     #Terminate EC2 instances when not needed
