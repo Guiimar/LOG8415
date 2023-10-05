@@ -14,7 +14,7 @@
 import configparser
 import boto3
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from creationModule import *
 from send_requests import *
 from delete_process import * 
@@ -41,6 +41,7 @@ if __name__ == '__main__':
     ami_id ='ami-03a6eaae9938c858c'
     """
 #1============================>SETUP
+    print('============================>1-SETUP')
 
     #--------------------------------------Creating ec2 and elbv2 resource and client --------------------------------
     #Create ec2 resource with our credentials:
@@ -205,7 +206,9 @@ if __name__ == '__main__':
     rules.append(rule_list_2)
 
     print('Listner rules created')
-
+    
+    print('============================>SETUP ends')
+    print('\n============================>2-Test Scenario')
 #2============================>Benchemarking
     
     #------------------------------------------Sending requests -----------------------------------------------------------------------
@@ -216,35 +219,8 @@ if __name__ == '__main__':
     print(StartTime)
 
     #Sending Two threads using the two paths (/Cluster1 and /Cluster2)
-    def consumeGETRequestSync(url_lb,path):
-        try:
-            url="http://{}/{}".format(url_lb, path)
-            #print(url)
-            #headers={'content-type': 'application/json'}
-            r=requests.get(url)
-            #print(r.status_code)
-            #print(r.json(),end=' status ')
-        except Exception as e:
-            print('Exception returned is',e)
-
-    def first_thread(lb_dns,path):
-        print('Starting sending 1000 requests')
-        for _ in range(1000):
-            consumeGETRequestSync(lb_dns,path)
-        print('Finished sending 1000 requests')
-
-    #5OO requests then 60 seconds sleep then 1000 requests
-    def second_thread(lb_dns,path):
-        for _ in range(500):
-            consumeGETRequestSync(lb_dns,path)
-        
-        time.sleep(60)
-
-        for _ in range(1000):
-            consumeGETRequestSync(lb_dns,path)
-
-        print('Finished sending 500 plus 1000 requests ')
     for path in ['cluster1','cluster2']:
+        print('---Sending Threads to: '+str(path)+'---')
         #Defining the threads
         first_sending_thread=Thread(target=first_thread,args=(url,path))
         second_sending_thread=Thread(target=second_thread,args=(url,path))
@@ -254,127 +230,69 @@ if __name__ == '__main__':
         
         first_sending_thread.join()
         second_sending_thread.join()
-    
+        print('---Finishing for: '+str(path)+'---')
+
     # The start time of the test scenario
     EndTime=datetime.utcnow()
     print(EndTime)
 
-    print('script terminated')
+    print('\n============================>Test Scenario ends')
+
+
     #---------------------------------------------Plot metrics -----------------------------------------------------------------------
     #Create Cloudwatch client
     Cloudwatch_client=client_cloudwatch(key_id, access_key, session_token)
-    Cloudwatch_client.list_metrics()
+    Cloudwatch_client.list_metrics(Namespace='AWS/EC2',Dimensions=[{'Name': 'InstanceId', 'Value': 'i-0467ba92d72439d9b'}])
+    a=Cloudwatch_client.list_metrics(Dimensions=[{'Name': 'TargetGroup',
+     'Value': 'targetgroup/Cluster2-m4-large/57916b4cfcc026ba'},
+    {'Name': 'LoadBalancer', 'Value': 'app/OurALB/d0f9e6bad4c9e9a3'}])
+    [m['MetricName'] for m in a['Metrics']]
 
     #Target Groups names list
-    TargetGroups_Names_list=[target_group_1,target_group_2]
-    #Period of 1 hour
-    Period=120
+    TargetGroups_arns_list=[target_group_1,target_group_2]
+    #Data retrieving period in secondes
+    Period=30
     #Path to save the plots
     path='Visualizations\\'
 
-    #Retrieve 'CountRequest' metric per cluster
-    def get_metric_clusters(Cloudwatch_client,Id,MetricName,LoadBalancer_Name,TargetGroups_Names_list,Start_Time, End_Time,Period,Stat):
-        TargetGroups_Metrics={}
-        for TargterGroup in  TargetGroups_Names_list:
-
-            Target_cloudwatch=Cloudwatch_client.get_metric_data(
-                MetricDataQueries=[
-                    {
-                        'Id':Id,
-                        'MetricStat':{
-                            'Metric':{
-                                'Namespace': 'AWS/ApplicationELB',
-                                'MetricName':MetricName,
-                                'Dimensions':[
-                                    {
-                                        'Name':'LoadBalancer',
-                                        'Value': LoadBalancer_Name
-                                        
-                                    },
-                                    {
-                                        'Name':'TargetGroup',
-                                        'Value':TargterGroup
-
-                                    }
-                                ],
-
-                            },
-                        'Stat':Stat,
-                        #'Label': str(MetricName+' metric for '+TargterGroup+' Of '+LoadBalancer_Name),
-                        'Period':Period,
-
-                        },
-                        'ReturnData':True
-                    },
-                ],
-                StartTime=Start_Time,
-                EndTime=End_Time,
-            )
-            metric_list=Target_cloudwatch['MetricDataResults'][0]['Values']
-            # [a[Stat] for a in Target_cloudwatch['MetricDataResults'][0]['Values']]
-            #print(metric_list)
-            time_stamps=Target_cloudwatch['MetricDataResults'][0]['Timestamps']
-            # [a['Timestamp'] for a in Target_cloudwatch['MetricDataResults'][0]['Timestamps']]
-            #print(time_stamps)
-            TargetGroups_Metrics[str(LoadBalancer_Name)+'/'+str(TargterGroup)]=metric_list
-            TargetGroups_Metrics['timestamps']=time_stamps
-
-        return TargetGroups_Metrics
-    load_balancerarn
-    target_group_2
-    from datetime import timedelta
-    CountRequest_dict=get_metric_clusters(Cloudwatch_client,'zzzzsss1','RequestCount','app/OurALB/dfba148bad6d8b38',['targetgroup/Cluster1-t2-large/928c1b694162ceff','targetgroup/Cluster2-m4-large/ef4f357a3d4308ad'],EndTime-timedelta(minutes=6),EndTime+timedelta(minutes=5),30,'Sum')
-    CountRequest_dict
-    #type(CountRequest_dict['MetricDataResults'][0]['Values'])
-    #Cloudwatch_client.list_metrics(Namespace='AWS/ApplicationELB',Dimensions=[{'Name': 'LoadBalancer', 'Value': LoadBalancerName}])
-    #[m.get('Dimensions', []) for m in Cloudwatch_client.list_metrics(Namespace='AWS/ApplicationELB')['Metrics']]
-    #Cloudwatch_client.list_metrics(Namespace='AWS/ApplicationELB')
-    #Cloudwatch_client.get_metric_statistics('AWS/ApplicationELB','RequestCountPerTarget',StartTime.isoformat(),EndTime.isoformat(),Period)
-    #Plot 'CountRequest' metric per cluster in the specified path
-
-    def plot_metric_per_cluster(values_timestamp_dict,MetricName,path):
-   
-        time=values_timestamp_dict['timestamps']
-        del values_timestamp_dict['timestamps']
-        LoadBalancerName=list(values_timestamp_dict.keys())[0].split('/')[0]
-        plt.figure(figsize=(12,9))
-        for key in list(values_timestamp_dict.keys()):
-            plt.plot(time,values_timestamp_dict[key],label=str(key))
-        plt.xlabel('Time')
-        plt.ylabel(str(MetricName))
-        plt.title(str(MetricName)+' per cluster of '+str(LoadBalancerName))
-        plt.legend(loc='upper right')
-        plt.tight_layout()
-        plt.savefig(path+str(MetricName)+'_per_cluster_of_'+str(LoadBalancerName)+'.png')
-    plot_metric_per_cluster(CountRequest_dict,'CountRequest',path)
+    #Retrieve 'RequestCount' metric per cluster
+    RequestCount_dict=get_metric_clusters(Cloudwatch_client,'metric1','RequestCount',load_balancerarn,TargetGroups_arns_list,EndTime-timedelta(minutes=10),EndTime+timedelta(minutes=10),Period,'Sum')
+    #Plot 'RequestCount' metric per cluster in the specified path
+    plot_metric_per_cluster(RequestCount_dict,'RequestCount',path)
 
     #Retrieve 'RequestCountPerTarget' metric per cluster
-    CountRequestPerTarget_dict=get_metric_clusters(Cloudwatch_client,'Metric2','RequestCountPerTarget',LoadBalancerName,TargetGroups_Names_list,StartTime, EndTime,Period,Stat='Sum')
+    CountRequestPerTarget_dict=get_metric_clusters(Cloudwatch_client,'metric2','RequestCountPerTarget',load_balancerarn,TargetGroups_arns_list,EndTime-timedelta(minutes=10),EndTime+timedelta(minutes=10),Period,'Sum')
     #Plot 'RequestCountPerTarget' metric per cluster in the specified path
     plot_metric_per_cluster(CountRequestPerTarget_dict,'RequestCountPerTarget',path)
 
     #Retrieve 'TargetResponseTime' metric per cluster
-    TargetResponseTime_dict=get_metric_clusters(Cloudwatch_client,'Metric3','TargetResponseTime',LoadBalancerName,TargetGroups_Names_list,StartTime, EndTime,Period,Stat='Sum')
+    TargetResponseTime_dict=get_metric_clusters(Cloudwatch_client,'metric3','TargetResponseTime',load_balancerarn,TargetGroups_arns_list,EndTime-timedelta(minutes=5),EndTime+timedelta(minutes=5),Period,'Sum')
     #Plot 'TargetResponseTime' metric per cluster in the specified path
     plot_metric_per_cluster(TargetResponseTime_dict,'TargetResponseTime',path)
 
-    #Retrieve 'TargetConnectionErrorCount' metric per cluster
-    TargetConnectionErrorCount_dict=get_metric_clusters(Cloudwatch_client,'Metric4','TargetConnectionErrorCount',LoadBalancerName,TargetGroups_Names_list,StartTime, EndTime,Period,Stat='Sum')
-    #Plot 'TargetConnectionErrorCount' metric per cluster in the specified path
-    plot_metric_per_cluster(TargetConnectionErrorCount_dict,'TargetConnectionErrorCount',path)
+    #Retrieve Minimum 'HealthyHostCount' metric per cluster
+    HealthyHostCount_dict=get_metric_clusters(Cloudwatch_client,'metric4','HealthyHostCount',load_balancerarn,TargetGroups_arns_list,EndTime-timedelta(minutes=10),EndTime+timedelta(minutes=10),Period,'Minimum')
+    #Plot 'Healthy Hosts' metric per cluster in the specified path
+    plot_metric_per_cluster(HealthyHostCount_dict,'Minimum HealthyHostCount',path)
     
     #Instances Ids of TG1
     Instances_Ids_TG1=[Instance for Instance in instances_t2 ]
     #Instances Ids of TG2
     Instances_Ids_TG2=[Instance for Instance in instances_m4 ]
-
+   
     #Retrieve Average 'CPUUtilization' metric of all instances per cluster
-    CPUutilization_TG1_dict=get_average_Instances_metrics_per_cluster(Cloudwatch_client,'a5','CPUUtilization',TargetGroup1_name,Instances_Ids_TG1,StartTime, EndTime,Period,Stat='Average') 
-    CPUutilization_TG2_dict=get_average_Instances_metrics_per_cluster(Cloudwatch_client,'a6','CPUUtilization',TargetGroup2_name,Instances_Ids_TG2,StartTime, EndTime,Period,Stat='Average') 
+    CPUutilization_TG1_dict=get_average_Instances_metrics_per_cluster(Cloudwatch_client,'metric5','CPUUtilization',Instances_Ids_TG1,EndTime-timedelta(minutes=10), EndTime+timedelta(minutes=10),Period,'Sum') 
+    CPUutilization_TG2_dict=get_average_Instances_metrics_per_cluster(Cloudwatch_client,'metric6','CPUUtilization',Instances_Ids_TG2,EndTime-timedelta(minutes=10), EndTime+timedelta(minutes=10),Period,'Sum') 
     #Plot Average 'CPUUtilization' metric of all instances per cluster
-    plot_average_Instances_metrics_per_cluster(CPUutilization_TG1_dict,CPUutilization_TG2_dict,'CPUUtilization',path)
+    plot_average_Instances_metrics_per_cluster(CPUutilization_TG1_dict,CPUutilization_TG2_dict,target_group_1,target_group_2,'CPUUtilization',path)
 
-    
+    #Retrieve Average 'NetworkPacketsIn' metric of all instances per cluster
+    NetworkPacketsIn_TG1_dict=get_average_Instances_metrics_per_cluster(Cloudwatch_client,'metric7','NetworkPacketsIn',Instances_Ids_TG1,EndTime-timedelta(minutes=10), EndTime+timedelta(minutes=10),Period,'Sum') 
+    NetworkPacketsIn_TG2_dict=get_average_Instances_metrics_per_cluster(Cloudwatch_client,'metric8','NetworkPacketsIn',Instances_Ids_TG2,EndTime-timedelta(minutes=10), EndTime+timedelta(minutes=10),Period,'Sum') 
+    #Plot Average 'NetworkPacketsIn' metric of all instances per cluster
+    plot_average_Instances_metrics_per_cluster(NetworkPacketsIn_TG1_dict,NetworkPacketsIn_TG2_dict,target_group_1,target_group_2,'NetworkPacketsIn',path)
+
+
 #3============================>Termination and deletion
     time.sleep(120)
     #Terminate EC2 instances when not needed
