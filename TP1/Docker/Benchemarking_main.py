@@ -38,17 +38,17 @@ if __name__ == '__main__':
     #Instances Ids of TG1
     Instances_Ids_TG1=[Instance['Target']['Id'] for Instance in elbv2_client.describe_target_health(TargetGroupArn=TargetGroups_arns_list[0])['TargetHealthDescriptions']]
     #Instances Ids of TG2
-    Instances_Ids_TG2=Instances_Ids_TG1=[Instance['Target']['Id'] for Instance in elbv2_client.describe_target_health(TargetGroupArn=TargetGroups_arns_list[1])['TargetHealthDescriptions']]
+    Instances_Ids_TG2=[Instance['Target']['Id'] for Instance in elbv2_client.describe_target_health(TargetGroupArn=TargetGroups_arns_list[1])['TargetHealthDescriptions']]
     print('\nAll Setup data are retrieved successfully')    
     #------------------------------------------Sending requests -------------------------------------------------------------------
     
-    print('\n=================================> Test Sceario Begins')
+    print('\n=================================> Test Scenario Begins')
     # The start time of the test scenario
     StartTime=datetime.utcnow()
     print(StartTime)
     #Sending Two threads using the two paths (/Cluster1 and /Cluster2)
     for path in ['cluster1','cluster2']:
-        print('\n---Sending Threads to: '+str(path)+'---')
+        print('\n'+str(datetime.utcnow())+'---Sending Threads to: '+str(path)+'---')
         #Defining the threads
         first_sending_thread=Thread(target=first_thread,args=(url,path))
         second_sending_thread=Thread(target=second_thread,args=(url,path))
@@ -58,7 +58,7 @@ if __name__ == '__main__':
         
         first_sending_thread.join()
         second_sending_thread.join()
-        print('---Finishing for: '+str(path)+'---')
+        print(str(datetime.utcnow())+'---Finishing for: '+str(path)+'---')
 
     # The start time of the test scenario
     EndTime=datetime.utcnow()
@@ -95,11 +95,13 @@ if __name__ == '__main__':
 
     
     #Plot Average 'CPUUtilization' metric of all instances per cluster
-    plot_Instances_metrics_per_cluster(Cloudwatch_client,'metric5',TargetGroups_names_list[0],'CPUUtilization',Instances_Ids_TG1,EndTime-timedelta(minutes=60), EndTime,Period,'Average',path)
-    plot_Instances_metrics_per_cluster(Cloudwatch_client,'metric6',TargetGroups_names_list[1],'CPUUtilization',Instances_Ids_TG2,EndTime-timedelta(minutes=60), EndTime,Period,'Average',path)
+    plot_Instances_metrics_per_cluster(Cloudwatch_client,'metric5',TargetGroups_names_list[0],'CPUUtilization',Instances_Ids_TG1,EndTime-timedelta(minutes=10), EndTime+timedelta(minutes=30),Period,'Average',path)
+    plot_Instances_metrics_per_cluster(Cloudwatch_client,'metric6',TargetGroups_names_list[1],'CPUUtilization',Instances_Ids_TG2,EndTime-timedelta(minutes=10), EndTime+timedelta(minutes=30),Period,'Average',path)
 
     #Plot Average 'NetworkPacketsIn' metric of all instances per cluster
-    plot_Instances_metrics_per_cluster(Cloudwatch_client,'metric7',TargetGroups_names_list[0],'NetworkPacketsIn',Instances_Ids_TG1,EndTime-timedelta(minutes=60), EndTime,Period,'Sum',path)
-    plot_Instances_metrics_per_cluster(Cloudwatch_client,'metric8',TargetGroups_names_list[1],'NetworkPacketsIn',Instances_Ids_TG2,EndTime-timedelta(minutes=60), EndTime,Period,'Sum',path)
+    plot_Instances_metrics_per_cluster(Cloudwatch_client,'metric7',TargetGroups_names_list[0],'NetworkPacketsIn',Instances_Ids_TG1,EndTime-timedelta(minutes=10), EndTime+timedelta(minutes=30),Period,'Sum',path)
+    plot_Instances_metrics_per_cluster(Cloudwatch_client,'metric8',TargetGroups_names_list[1],'NetworkPacketsIn',Instances_Ids_TG2,EndTime-timedelta(minutes=10), EndTime+timedelta(minutes=30),Period,'Sum',path)
     
     print('============================>Ploting metrics ends')
+
+

@@ -13,7 +13,7 @@ def client_cloudwatch(aws_access_key_id, aws_secret_access_key, aws_session_toke
 
 #Function to get and plot Cloudwatch metrics per target groups of an ALB in a specific time interval: 
 def plot_metric_clusters(Cloudwatch_client,Id,MetricName,LoadBalancerarn,TargetGroups_arns_list,Start_Time, End_Time,Period,Stat,path):
-        plt.figure(figsize=(12,9))
+        plt.figure(figsize=(15,10))
         arn_lb=LoadBalancerarn.split('/')
         arn_lb=arn_lb[1]+'/'+arn_lb[2]+'/'+arn_lb[3]
         for TargterGroup in  TargetGroups_arns_list:
@@ -51,8 +51,8 @@ def plot_metric_clusters(Cloudwatch_client,Id,MetricName,LoadBalancerarn,TargetG
                 StartTime=Start_Time,
                 EndTime=End_Time,
             )
-            metric_list=Target_cloudwatch['MetricDataResults'][0]['Values'][::-1]
-            time_stamps=[t.strftime('%H:%M') for t in Target_cloudwatch['MetricDataResults'][0]['Timestamps']][::-1]
+            metric_list=Target_cloudwatch['MetricDataResults'][0]['Values']
+            time_stamps=Target_cloudwatch['MetricDataResults'][0]['Timestamps']
             plt.plot(time_stamps,metric_list,label=arn_tg)
         plt.xlabel('Time')
         plt.ylabel(str(MetricName))
@@ -64,7 +64,7 @@ def plot_metric_clusters(Cloudwatch_client,Id,MetricName,LoadBalancerarn,TargetG
 
 #Function to get and plot instances metrics per cluster and save it in a graph: 
 def plot_Instances_metrics_per_cluster(Cloudwatch_client,Id,Cluster_name,MetricName,Instances_Ids,Start_Time, End_Time,Period,Stat,path):
-        plt.figure(figsize=(12,9))
+        plt.figure(figsize=(15,10))
         for i in range(len(Instances_Ids)) :
             EC2_Id=Instances_Ids[i]
             EC2_Cloudwatch=Cloudwatch_client.get_metric_data(
