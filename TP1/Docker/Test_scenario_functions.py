@@ -1,8 +1,8 @@
-import json
 import requests
-from threading import Thread
 import time
-import boto3
+from threading import Thread
+
+
 
 def consumeGETRequestSync(url_lb,path):
     try:
