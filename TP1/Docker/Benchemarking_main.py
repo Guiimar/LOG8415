@@ -41,7 +41,7 @@ if __name__ == '__main__':
     Instances_Ids_TG2=[Instance['Target']['Id'] for Instance in elbv2_client.describe_target_health(TargetGroupArn=TargetGroups_arns_list[1])['TargetHealthDescriptions']]
     print('\nAll Setup data are retrieved successfully')    
     #------------------------------------------Sending requests -------------------------------------------------------------------
-    
+    time.sleep(120)
     print('\n=================================> Test Scenario Begins')
     # The start time of the test scenario
     StartTime=datetime.utcnow()
@@ -71,7 +71,7 @@ if __name__ == '__main__':
     #Create Cloudwatch client
     print('\n============================>Ploting metrics...')
 
-    time.sleep(120)
+    time.sleep(300)
     Cloudwatch_client=client_cloudwatch(key_id, access_key, session_token)
 
     
@@ -88,7 +88,7 @@ if __name__ == '__main__':
     plot_metric_clusters(Cloudwatch_client,'metric2','RequestCountPerTarget',load_balancerarn,TargetGroups_arns_list,EndTime-timedelta(minutes=6),EndTime+timedelta(minutes=2),Period,'Sum',path)
 
     #Plot 'TargetResponseTime' metric per cluster in the specified path
-    plot_metric_clusters(Cloudwatch_client,'metric3','TargetResponseTime',load_balancerarn,TargetGroups_arns_list,EndTime-timedelta(minutes=6),EndTime+timedelta(minutes=2),Period,'Sum',path)
+    plot_metric_clusters(Cloudwatch_client,'metric3','TargetResponseTime',load_balancerarn,TargetGroups_arns_list,EndTime-timedelta(minutes=6),EndTime+timedelta(minutes=2),Period,'Average',path)
     
     #Plot 'Healthy Hosts' metric per cluster in the specified path
     plot_metric_clusters(Cloudwatch_client,'metric4','HealthyHostCount',load_balancerarn,TargetGroups_arns_list,EndTime-timedelta(minutes=6),EndTime+timedelta(minutes=2),Period,'Minimum',path)
