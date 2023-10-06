@@ -92,8 +92,8 @@ def plot_Instances_metrics_per_cluster(Cloudwatch_client,Id,Cluster_name,MetricN
                 StartTime=Start_Time,
                 EndTime=End_Time
                 )
-            metric=EC2_Cloudwatch['MetricDataResults'][0]['Values'][::-1]
-            timestimps=[t.strftime('%H:%M') for t in EC2_Cloudwatch['MetricDataResults'][0]['Timestamps']][::-1]
+            metric=EC2_Cloudwatch['MetricDataResults'][0]['Values']
+            timestimps=EC2_Cloudwatch['MetricDataResults'][0]['Timestamps']
             plt.plot(timestimps,metric,label=Cluster_name+' EC2_Id= '+EC2_Id)
             plt.xlabel('Time')
             plt.ylabel(str(MetricName)+' per instance')
