@@ -243,6 +243,7 @@ if __name__ == '__main__':
 
     #---------------------------------------------Plot metrics -----------------------------------------------------------------------
     #Create Cloudwatch client
+    time.sleep(120)
     Cloudwatch_client=client_cloudwatch(key_id, access_key, session_token)
 
     #Target Groups names list
@@ -252,12 +253,12 @@ if __name__ == '__main__':
     #Path to save the plots
     path='Visualizations\\'
 
-    #Function to get a dictionary of timestamps List and Cloudwatch metric Lists of target groups of an ALB in a specific time interval: 
+
+    #Function to get and plot Cloudwatch metrics per target groups of an ALB in a specific time interval: 
     def plot_metric_clusters(Cloudwatch_client,Id,MetricName,LoadBalancerarn,TargetGroups_arns_list,Start_Time, End_Time,Period,Stat,path):
             plt.figure(figsize=(12,9))
             arn_lb=LoadBalancerarn.split('/')
             arn_lb=arn_lb[1]+'/'+arn_lb[2]+'/'+arn_lb[3]
-            TargetGroups_Metrics={}
             for TargterGroup in  TargetGroups_arns_list:
                 arn_tg=TargterGroup.split(':')
                 arn_tg=arn_tg[5]
@@ -295,7 +296,7 @@ if __name__ == '__main__':
                 )
                 metric_list=Target_cloudwatch['MetricDataResults'][0]['Values'][::-1]
                 time_stamps=[t.strftime('%H:%M') for t in Target_cloudwatch['MetricDataResults'][0]['Timestamps']][::-1]
-                plt.plot(time_stamps,metric_list,label=arn_lb)
+                plt.plot(time_stamps,metric_list,label=arn_tg)
             plt.xlabel('Time')
             plt.ylabel(str(MetricName))
             plt.title(str(MetricName)+' per cluster')
@@ -305,16 +306,16 @@ if __name__ == '__main__':
 
     
     #Plot 'RequestCount' metric per cluster in the specified path
-    plot_metric_clusters(Cloudwatch_client,'metric1','RequestCount',load_balancerarn,TargetGroups_arns_list,EndTime-timedelta(minutes=6),EndTime+timedelta(minutes=2),Period,'Sum',path)
+    plot_metric_clusters(Cloudwatch_client,'metric1','RequestCount',load_balancerarn,TargetGroups_arns_list,EndTime-timedelta(minutes=10),EndTime+timedelta(minutes=2),Period,'Sum',path)
 
     #Plot 'RequestCountPerTarget' metric per cluster in the specified path
-    plot_metric_clusters(Cloudwatch_client,'metric2','RequestCountPerTarget',load_balancerarn,TargetGroups_arns_list,EndTime-timedelta(minutes=6),EndTime+timedelta(minutes=2),Period,'Sum',path)
+    plot_metric_clusters(Cloudwatch_client,'metric2','RequestCountPerTarget',load_balancerarn,TargetGroups_arns_list,EndTime-timedelta(minutes=10),EndTime+timedelta(minutes=2),Period,'Sum',path)
 
     #Plot 'TargetResponseTime' metric per cluster in the specified path
-    plot_metric_clusters(Cloudwatch_client,'metric3','TargetResponseTime',load_balancerarn,TargetGroups_arns_list,EndTime-timedelta(minutes=6),EndTime+timedelta(minutes=2),Period,'Sum',path)
+    plot_metric_clusters(Cloudwatch_client,'metric3','TargetResponseTime',load_balancerarn,TargetGroups_arns_list,EndTime-timedelta(minutes=10),EndTime+timedelta(minutes=2),Period,'Sum',path)
     
     #Plot 'Healthy Hosts' metric per cluster in the specified path
-    plot_metric_clusters(Cloudwatch_client,'metric4','HealthyHostCount',load_balancerarn,TargetGroups_arns_list,EndTime-timedelta(minutes=6),EndTime+timedelta(minutes=2),Period,'Minimum',path)
+    plot_metric_clusters(Cloudwatch_client,'metric4','HealthyHostCount',load_balancerarn,TargetGroups_arns_list,EndTime-timedelta(minutes=10),EndTime+timedelta(minutes=2),Period,'Minimum',path)
 
     #Instances Ids of TG1
     Instances_Ids_TG1=[Instance for Instance in instances_t2 ]
@@ -329,3 +330,41 @@ if __name__ == '__main__':
     plot_Instances_metrics_per_cluster(Cloudwatch_client,'metric7',TargetGroup1_name,'NetworkPacketsIn',Instances_Ids_TG1,EndTime-timedelta(minutes=60), EndTime,Period,'Sum',path)
     plot_Instances_metrics_per_cluster(Cloudwatch_client,'metric8',TargetGroup2_name,'NetworkPacketsIn',Instances_Ids_TG2,EndTime-timedelta(minutes=60), EndTime,Period,'Sum',path)
     
+    #Function to get and plot instances metrics per cluster and save it in a graph: 
+    def plot_Instances_metrics_per_cluster(Cloudwatch_client,Id,Cluster_name,MetricName,Instances_Ids,Start_Time, End_Time,Period,Stat,path):
+            plt.figure(figsize=(12,9))
+            for i in range(len(Instances_Ids)) :
+                EC2_Id=Instances_Ids[i]
+                EC2_Cloudwatch=Cloudwatch_client.get_metric_data(
+                    MetricDataQueries=[
+                        {
+                            'Id':Id,
+                            'MetricStat':{
+                                'Metric':{
+                                    'Namespace': 'AWS/EC2',
+                                    'MetricName':MetricName,
+                                    'Dimensions':[{'Name':'InstanceId',
+                                            'Value': EC2_Id
+                                            
+                                        }
+                                    ]
+                                },
+                            'Stat':Stat,
+                            'Period':Period,
+
+                            },
+                            'ReturnData':True,
+                        },
+                    ],
+                    StartTime=Start_Time,
+                    EndTime=End_Time
+                    )
+                metric=EC2_Cloudwatch['MetricDataResults'][0]['Values']
+                timestimps=EC2_Cloudwatch['MetricDataResults'][0]['Timestamps']
+                plt.plot(timestimps,metric,label=Cluster_name+' EC2_Id= '+EC2_Id)
+                plt.xlabel('Time')
+                plt.ylabel(str(MetricName)+' per instance')
+                plt.title('EC2 Instances '+str(MetricName)+ ' of: '+Cluster_name)
+                plt.legend(loc='upper right')
+                plt.tight_layout()
+                plt.savefig(path+'EC2_Instances_'+str(MetricName)+'_of_'+Cluster_name+'.png')
