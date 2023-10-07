@@ -1,7 +1,7 @@
 # Create a Dockerfile to containerize your the application:
 
 # Use an official Python runtime as a parent image
-FROM python:3.8-slim
+FROM python:3.10-slim
 
 # Set the working directory to /app
 WORKDIR /app
@@ -16,4 +16,4 @@ RUN pip install -r requirements.txt
 EXPOSE 80
 
 # Run main.py when the container launches
-CMD ["python", "main.py"]
+CMD ["python", "Benchemarking_main.py"]
