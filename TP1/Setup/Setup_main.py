@@ -121,7 +121,7 @@ if __name__ == '__main__':
 
     #time to wait for update ec2 running status before registration in target groups
     print("\nWaiting for EC2 instances to become on running status before registration in Target groups...")
-    time.sleep(120)
+    time.sleep(180)
     #Targets registration on target groups
     register_targets(elbv2_serviceclient,instances_m4,target_group_1) 
     register_targets(elbv2_serviceclient,instances_t2,target_group_2)
