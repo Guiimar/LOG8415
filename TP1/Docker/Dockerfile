@@ -6,10 +6,9 @@ FROM python:3.10-slim
 # Set the working directory to /app
 WORKDIR /app
 
-# Copy the current directory contents into the container at /app
-COPY . /app
-#Test pour récuperer le fichier credentials.ini dans le parent de docker
-COPY ../ /app
+COPY ./LOG8415/TP1/Docker/* ./Docker/
+
+COPY ./LOG8415/TP1/Credentials.ini ./
 
 # Install any needed packages specified in requirements.txt
 RUN pip install -r requirements.txt
@@ -18,4 +17,4 @@ RUN pip install -r requirements.txt
 EXPOSE 80
 
 # Run main.py when the container launches
-CMD ["python", "Benchemarking_main.py"]
+CMD ["python", "./Docker/Benchemarking_main.py"]
