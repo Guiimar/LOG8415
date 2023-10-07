@@ -8,6 +8,8 @@ WORKDIR /app
 
 # Copy the current directory contents into the container at /app
 COPY . /app
+#Test pour récuperer le fichier credentials.ini dans le parent de docker
+COPY ../ /app
 
 # Install any needed packages specified in requirements.txt
 RUN pip install -r requirements.txt
