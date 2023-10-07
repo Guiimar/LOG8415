@@ -6,6 +6,8 @@ FROM python:3.10-slim
 # Set the working directory to /app
 WORKDIR /app
 
+RUN ls -l /app
+
 COPY ./LOG8415/TP1/Docker/* ./app/Docker/
 
 COPY ./LOG8415/TP1/Credentials.ini ./app/
