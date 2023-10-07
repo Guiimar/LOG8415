@@ -83,34 +83,36 @@ if __name__ == '__main__':
 
     ud = str(flask_script)
 
-    #--------------------------------------Create Instances of cluster 1 -----------------------------------------------------------
 
-    # Create 4 instances with t2.large as intance type,
-    'By choice, we create the 4 EC2 instances for Cluster 1 in availability zones us-east-1a and us-east-1b'
-    Availabilityzons_Cluster1=['us-east-1a','us-east-1b','us-east-1a','us-east-1b','us-east-1a']
-    instance_type = "t2.large"
-    print("\n Creating instances of Cluster 1 with type : t2.large")
-    instances_t2= create_instance_ec2(4,ami_id, instance_type,key_pair_name,ec2_serviceresource,security_group_id,Availabilityzons_Cluster1,ud)
-    #print(instances_t2)
-    print("\n Instances created succefuly instance type : t2.large")
-
-    #--------------------------------------Create Instances of cluster 2 ------------------------------------------------------------
+    #--------------------------------------Create Instances of cluster 1 ------------------------------------------------------------
 
     # Create 5 instances with m4.large as instance type:
-    'By choice, we create the 5 EC2 instances for Cluster 2 in avaibility zones us-east-1c and us-east-1d'
-    Availabilityzons_Cluster2=['us-east-1c','us-east-1d','us-east-1c','us-east-1d','us-east-1c']
+    'By choice, we create the 5 EC2 instances for Cluster 1 in avaibility zones us-east-1a and us-east-1b'
+    Availabilityzons_Cluster1=['us-east-1a','us-east-1b','us-east-1a','us-east-1b','us-east-1a']
     instance_type = "m4.large"
-    print("\n Creating instances of Cluster 2 with type : m4.large")
-    instances_m4= create_instance_ec2(5,ami_id, instance_type,key_pair_name,ec2_serviceresource,security_group_id,Availabilityzons_Cluster2,ud)
+    print("\n Creating instances of Cluster 1 with type : m4.large")
+    instances_m4= create_instance_ec2(5,ami_id, instance_type,key_pair_name,ec2_serviceresource,security_group_id,Availabilityzons_Cluster1,ud)
     #print(instances_m4)
     print("\n Instances created succefuly instance type  : m4.large")
 
+    #--------------------------------------Create Instances of cluster 2 -----------------------------------------------------------
+
+    # Create 4 instances with t2.large as intance type,
+    'By choice, we create the 4 EC2 instances for Cluster 2 in availability zones us-east-1c and us-east-1d'
+    Availabilityzons_Cluster2=['us-east-1c','us-east-1d','us-east-1c','us-east-1d']
+    instance_type = "t2.large"
+    print("\n Creating instances of Cluster 2 with type : t2.large")
+    instances_t2= create_instance_ec2(4,ami_id, instance_type,key_pair_name,ec2_serviceresource,security_group_id,Availabilityzons_Cluster2,ud)
+    #print(instances_t2)
+    print("\n Instances created succefuly instance type : t2.large")
+
+    
     #--------------------------------------------Create Target groups ----------------------------------------------------------------
 
     #Create the two targets groups (Clusters)
-    TargetGroup1_name='Cluster1-t2-large'
+    TargetGroup1_name='Cluster1-m4-large'
     target_group_1=create_target_group(TargetGroup1_name,vpc_id,80, elbv2_serviceclient)
-    TargetGroup2_name='Cluster2-m4-large'
+    TargetGroup2_name='Cluster2-t2-large'
     target_group_2=create_target_group(TargetGroup2_name,vpc_id,80, elbv2_serviceclient)
     print("\nTarget groups created")
 
@@ -121,8 +123,8 @@ if __name__ == '__main__':
     print("\nWaiting for EC2 instances to become on running status before registration in Target groups...")
     time.sleep(120)
     #Targets registration on target groups
-    register_targets(elbv2_serviceclient,instances_t2,target_group_1) 
-    register_targets(elbv2_serviceclient,instances_m4,target_group_2)
+    register_targets(elbv2_serviceclient,instances_m4,target_group_1) 
+    register_targets(elbv2_serviceclient,instances_t2,target_group_2)
     print("Targets registred")
 
     #----------------------------Get mapping between availability zones and Ids of default vpc subnets -------------------------------
