@@ -18,5 +18,5 @@ Our script.sh code is divided into two parts :
 In order to run the script.sh, the user needs to:
 
 - Fill in the lines ( aws_access_key_id,aws_secret_access_key,aws_session_token) in the script.sh file with his credentials.
-- Have already installed python on his PC.
+- Have already installed python 3 on his PC.
 - Have already installed Docker on his PC.
