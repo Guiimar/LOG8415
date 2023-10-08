@@ -85,16 +85,16 @@ if __name__ == '__main__':
 
 
     #Plot 'RequestCount' metric per cluster in the specified path
-    plot_metric_clusters(Cloudwatch_client,'metric1','RequestCount',load_balancerarn,TargetGroups_arns_list,EndTime-timedelta(minutes=6),EndTime+timedelta(minutes=2),Period,'Sum',path)
+    plot_metric_clusters(Cloudwatch_client,'metric1','RequestCount',load_balancerarn,TargetGroups_arns_list,StartTime-timedelta(minutes=2),EndTime+timedelta(minutes=2),Period,'Sum',path)
 
     
     #Plot 'TargetResponseTime' metric per cluster in the specified path
-    plot_metric_clusters(Cloudwatch_client,'metric2','TargetResponseTime',load_balancerarn,TargetGroups_arns_list,EndTime-timedelta(minutes=6),EndTime+timedelta(minutes=2),Period,'Average',path)
+    plot_metric_clusters(Cloudwatch_client,'metric2','TargetResponseTime',load_balancerarn,TargetGroups_arns_list,StartTime-timedelta(minutes=2),EndTime+timedelta(minutes=2),Period,'Average',path)
     
 
     #Plot Average 'CPUUtilization' metric of all instances per cluster
-    plot_Instances_metrics_per_cluster(Cloudwatch_client,'metric3',TargetGroups_names_list[0],'CPUUtilization',Instances_Ids_TG1,EndTime-timedelta(minutes=30), EndTime+timedelta(minutes=30),Period,'Average',path)
-    plot_Instances_metrics_per_cluster(Cloudwatch_client,'metric4',TargetGroups_names_list[1],'CPUUtilization',Instances_Ids_TG2,EndTime-timedelta(minutes=30), EndTime+timedelta(minutes=30),Period,'Average',path)
+    plot_Instances_metrics_per_cluster(Cloudwatch_client,'metric3',TargetGroups_names_list[0],'CPUUtilization',Instances_Ids_TG1,StartTime-timedelta(minutes=30), EndTime+timedelta(minutes=30),Period,'Average',path)
+    plot_Instances_metrics_per_cluster(Cloudwatch_client,'metric4',TargetGroups_names_list[1],'CPUUtilization',Instances_Ids_TG2,StartTime-timedelta(minutes=30), EndTime+timedelta(minutes=30),Period,'Average',path)
 
 
     print('============================>Ploting metrics ends')
