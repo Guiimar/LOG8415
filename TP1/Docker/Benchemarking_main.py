@@ -81,7 +81,7 @@ if __name__ == '__main__':
     #Data retrieving period in secondes
     Period=60
     #Path to save the plots
-    path='Metrics_Visualizations\\'
+    path='Metrics_test\\'
 
 
     #Plot 'RequestCount' metric per cluster in the specified path
