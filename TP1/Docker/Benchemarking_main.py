@@ -74,7 +74,7 @@ if __name__ == '__main__':
     #Create Cloudwatch client
     print('\n============================>Ploting metrics...')
 
-    time.sleep(300)
+    time.sleep(120)
     Cloudwatch_client=client_cloudwatch(key_id, access_key, session_token)
 
     
